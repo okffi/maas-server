@@ -1,0 +1,49 @@
+{
+  "variables": {
+    "base_image": "ubuntu:latest",
+    "maas_image": "okffi/maas"
+  },
+  "builders": [
+    {
+        "type": "docker",
+        "image": "{{user `base_image`}}",
+        "export_path": "/tmp/maas-docker.tar"
+    }
+  ],
+  "provisioners": [
+        {
+            "type": "shell",
+            "inline": [
+                "sleep 30",
+                "sudo apt-get update",
+                "sudo apt-get install -y git",
+                "sudo apt-get install -y postgresql",
+                "sudo apt-get install -y postgis",
+                "sudo apt-get install -y python",
+                "sudo apt-get install -y python-psycopg2",
+                "sudo mkdir /maas",
+                "sudo mkdir /maas/server"
+            ]
+        },
+        {
+          "type": "file",
+          "source": "server",
+          "destination": "/maas"
+        },
+        {
+            "type": "shell",
+            "inline": [
+                "sudo chmod +x /maas/server/server2.py"
+            ]
+        }
+  ],
+  "post-processors": [
+        [
+            {
+                "type": "docker-import",
+                "repository": "{{user `maas_image`}}",
+                "tag": "latest"
+            }
+        ]
+    ]
+}

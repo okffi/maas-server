@@ -1,0 +1,36 @@
+{
+  "variables": {
+    "base_image": "okffi/maas",
+    "maas_image": "okffi/maas"
+  },
+  "builders": [
+    {
+        "type": "docker",
+        "image": "{{user `base_image`}}",
+        "commit": true,
+        "pull": false
+    }
+  ],
+  "provisioners": [
+        {
+          "type": "file",
+          "source": "server",
+          "destination": "/maas"
+        },
+        {
+            "type": "shell",
+            "inline": [
+                "sudo chmod +x /maas/server/run.sh"
+            ]
+        }
+  ],
+  "post-processors": [
+        [
+            {
+                "type": "docker-tag",
+                "repository": "{{user `maas_image`}}",
+                "tag": "latest"
+            }
+        ]
+    ]
+}

@@ -1,0 +1,34 @@
+{
+  "variables": {
+    "base_image": "okffi/maas",
+    "maas_image": "okffi/maas"
+  },
+  "builders": [
+    {
+        "type": "docker",
+        "image": "{{user `base_image`}}",
+        "commit": true,
+        "pull": false
+    }
+  ],
+  "provisioners": [
+    {
+        "type": "shell",
+        "inline": [
+            "sleep 30",
+            "sudo apt-get -y update",
+            "sudo apt-get -y upgrade",
+            "apt-get -y dist-upgrade"
+        ]
+    }
+  ],
+  "post-processors": [
+        [
+            {
+                "type": "docker-tag",
+                "repository": "{{user `maas_image`}}",
+                "tag": "latest"
+            }
+        ]
+    ]
+}
