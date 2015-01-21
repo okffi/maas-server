@@ -17,34 +17,6 @@ from math import radians, cos, sin, asin, sqrt
 
 import psycopg2 as db
 
-""" 
-
-These are data type conversion rules between old and new schemas
-
-ALTER TABLE traces
-    ALTER COLUMN "speed" TYPE float8
-        USING CAST("speed" as double precision)
-    ALTER COLUMN "accuracy" TYPE float8
-        USING CAST("accuracy" as double precision)
-    ALTER COLUMN "aaccuracy" TYPE float8
-        USING CAST("aaccuracy" as double precision)
-    ALTER COLUMN "heading" TYPE float8
-        USING CAST("heading" as double precision)
-    ALTER COLUMN "altitude" TYPE float8
-        USING CAST("altitude" as double precision);
-    ALTER COLUMN "timestamp" TYPE timestamptz
-        USING to_timestamp("timestamp", 'YYYY-MM-DD"T"HH24:MI:SS.USZ') at time zone 'UTC';
-    ALTER COLUMN geometry TYPE geometry(POINT, 4326)
-        USING ST_SetSRID(geometry,4326);
-
-ALTER TABLE routes
-    ALTER COLUMN geometry TYPE geometry(LINESTRING, 4326) 
-        USING ST_SetSRID(geometry,4326);
-
-
-A few fields needed to be renamed as well
-
-"""
 class BadRequestException(Exception):
     def __init__(self, value):
         self.value = value
@@ -67,7 +39,7 @@ class App():
         cursor = self.cursor()
         
         
-        sql = """INSERT INTO Plans (journey_id, geometry, timestamp)
+        sql = """INSERT INTO plan (journey_id, geometry, timestamp)
                  VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"""
         cursor.execute(sql, (plan['journey_id'], max_walk_distance,
                              min_transfer_time, walk_speed, mode, timestamp))
@@ -93,7 +65,7 @@ class App():
             if not 'speed' in trace or trace['speed'] is None or trace['speed'] == '':
                 raise BadRequestException('trace speed is missing')
 
-            sql = """INSERT INTO traces (geometry, journey_id, timestamp, speed, accuracy, altitude, altitude_accuracy, heading)
+            sql = """INSERT INTO trace (geometry, journey_id, timestamp, speed, accuracy, altitude, altitude_accuracy, heading)
                      VALUES (""" + "ST_GeomFromText('POINT(%.10f %.10f)', 4326)" % (float(trace['longitude']), float(trace['latitude'])) + """, %s, %s, %s, %s, %s, %s, %s)"""
 
             cursor.execute(sql, (trace['journey_id'], 
@@ -127,7 +99,7 @@ class App():
             if not 'speed' in route or route['speed'] is None or route['speed'] == '':
                 raise BadRequestException('route speed is missing')
                 
-            sql = """INSERT INTO Routes (geometry, journey_id, timestamp, speed, mode, was_on_route)
+            sql = """INSERT INTO route (geometry, journey_id, timestamp, speed, mode, was_on_route)
                      VALUES (""" + "ST_GeomFromText('LINESTRING(%.10f %.10f, %.10f %.10f)', 4326)" % (float(route['points'][0][1]), 
                                float(route['points'][0][0]),
                                float(route['points'][1][1]),
@@ -152,7 +124,7 @@ class App():
                         ST_AsGeoJSON(geometry) as geometry,
                         journey_id,
                         timestamp
-                        from plans where plan_id = %s"""
+                        from plan where plan_id = %s"""
         cursor.execute(sql, (plan_id,))
         plan = cursor.fetchone()        
         result={}
@@ -176,7 +148,7 @@ class App():
 
         cursor = self.cursor()
 
-        sql = "select ST_asGeoJSON(geometry), avg(speed) from Routes group by geometry"
+        sql = "select ST_asGeoJSON(geometry), avg(speed) from route group by geometry"
         cursor.execute(sql)
         routes = cursor.fetchall()
         if len(routes)==0:
@@ -192,7 +164,7 @@ class App():
                 print "duplicate key. old speed: ", speeds[key], " new speed: ", route[1]
             speeds[key]=route[1]
 
-        sql = "select ST_asGeoJSON(ST_LineMerge(ST_Union(geometry))) from (select DISTINCT geometry from Routes) as r"
+        sql = "select ST_asGeoJSON(ST_LineMerge(ST_Union(geometry))) from (select DISTINCT geometry from route) as r"
 
         if len(boundary)==4:
             sql += " WHERE MBRContains(buildMBR(?,?,?,?), geometry)"
@@ -235,8 +207,8 @@ class App():
                             #     if k < len(line)-1:
                             #         linestring+=", "
                             #linestring += ")"
-                            #sql="select avg(speed), ST_asGeoJSON(ST_Simplify(geometryFromText('" + linestring +"'), " + str(simplify) + ")) from Routes where ST_Intersects(geometry, geometryFromText('" + linestring + "', 4326))"
-                            #sql="select avg(speed) from Routes where ST_Intersects(geometry, geometryFromText('" + linestring + "', 4326))"
+                            #sql="select avg(speed), ST_asGeoJSON(ST_Simplify(geometryFromText('" + linestring +"'), " + str(simplify) + ")) from route where ST_Intersects(geometry, geometryFromText('" + linestring + "', 4326))"
+                            #sql="select avg(speed) from route where ST_Intersects(geometry, geometryFromText('" + linestring + "', 4326))"
                             #cursor.execute(sql)
                             #result=cursor.fetchone()
                             #avg=result[0]
