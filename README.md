@@ -21,13 +21,15 @@ All communication is done in JSON, encoded as UTF-8.
 
 ### Status handling
 
-The server is implemented using CORS.
+The server suports [CORS](http://en.wikipedia.org/wiki/Cross-origin_resource_sharing).
 
-Empty responses generate 204 status code.
+Successful responses with payload generate status code 200.
 
-Bad requeste generate 400 status code.
+Empty responses generate status code 204.
 
-Server errors generate 500 status code.
+Bad requeste generate status code 400.
+
+Server errors generate status code 500.
 
 ### Posting data
 
@@ -49,7 +51,7 @@ Please note the following:
 
 ### Workflow
 
-A typical workflow of the client application is to:
+A typical workflow of client application is to:
 
 1. Generate `journey_id` as a sufficiently long (30+ characters) random string
 2. Request an OTP plan
@@ -78,7 +80,7 @@ Parameters:
 name              | format   | units | mandatory | example
 ----------------- | -------- | ----- | --------- | --------
 journey_id        | string   |       | yes       |
-geometry          | geoJSON  |       | yes       | This should be an array of 
+geometry          | geoJSON  |       | yes       | This should be an ordered array of coordinates (from -> to)
 timestamp         | string   |       | yes       | This should be in ISO8601 format (see [toJSON()](http://www.w3schools.com/jsref/jsref_tojson.asp) method)
 
 Such request will return a unique plan id that can be used to retrieve plan details later via the following request:
@@ -95,15 +97,11 @@ The speed unit is meters per second.
 
 Data structure is based on [Leaflet API reference](http://leafletjs.com/reference.html).
 
-the `accuracy` and `alt_accuracy` units are meters.
-
-The `heading` is measured in degrees, ranged 0-360, north-referenced.
-
-The `point` attribute is expected to have a Point type.
-
 Traces form a very raw dataset of information about bycicle travel.
 
-`POST /traces`
+`POST /traces` 
+
+supports both single-object and array-of-objects formats.
 
 Parameters:
 
@@ -148,25 +146,25 @@ Fluency related data is stored in the following db tables (PostgreSQL/PotGIS dat
 
 Trace:
 
-Name              | Type         | notnull   | PK        | Notes
------------------ | ------------ | --------- | --------- | -------
-trace_id          | int8         | true      | true      |
-journey_id        | varchar      | true      |           |
-timestamp         | timestamptz  | true      |           |
-geometry          | geometry     | true      |           | POINT
-speed             | float        | true      |           |
-accuracy          | float        | false     |           |
-altitude          | float        | false     |           |
-altitude_accuracy | float        | false     |           |
-heading           | float        | false     |           |
+Name              | Type           | notnull   | PK        | Notes
+----------------- | -------------- | --------- | --------- | -------
+trace_id          | BIGSERIAL      | true      | true      |
+journey_id        | TEXT           | true      |           |
+timestamp         | TIMESTAMP      | true      |           |
+geometry          | geometry       | true      |           | POINT
+speed             | DECIMAL(21,16) | true      |           |
+accuracy          | DECIMAL(21,16) | false     |           |
+altitude          | DECIMAL(21,16) | false     |           |
+altitude_accuracy | DECIMAL(21,16) | false     |           |
+heading           | DECIMAL(21,16) | false     |           |
 
 Plan:
 
 Name                | Type          | notnull   | PK     | notes
 ------------------- | ------------- | --------- | ------ | -------
-plan_id             | int8          | true      | true   |
-journey_id          | varchar       | true      |        |
-timestamp           | timestamptz   | true      |        |
+plan_id             | BIGSERIAL     | true      | true   |
+journey_id          | TEXT          | true      |        |
+timestamp           | TIMESTAMP     | true      |        | WITH TIME ZONE
 geometry            | geometry      | true      |        | LINESTRING
 <!---
 mode                | varchar       | false     |        |
@@ -177,15 +175,15 @@ walk_speed          | float         | false     |        |
 
 Route *:
 
-Name            | Type         | notnull   | PK       | Notes
---------------- | ------------ | --------- | -------- | -----
-route_id        | int8         | true      | true     |
-journey_id      | varchar      | true      |          |
-timestamp       | timestamptz  | true      |          |
-geometry        | geometry     | true      |          | LINESTRING
-speed           | float        | true      |          |
-mode            | varchar      | true      |          |
-was_on_route    | bool         | false     |          |
+Name            | Type           | notnull   | PK       | Notes
+--------------- | -------------- | --------- | -------- | -----
+route_id        | BIGSERIAL      | true      | true     |
+journey_id      | TEXT           | true      |          |
+timestamp       | TIMESTAMP      | true      |          | WITH TIMEZONE
+geometry        | geometry       | true      |          | LINESTRING
+speed           | DECIMAL(21,16) | true      |          |
+mode            | TEXT           | true      |          |
+was_on_route    | BOOLEAN        | false     |          |
 
 * routes are to be obsoleted in the near future
 
