@@ -2,7 +2,7 @@
 
 OKFFI Fluency Navigator MaaS API server
 
-Server-docker is a utility that facilitates deployment and running
+Maas-docker is a utility that facilitates deployment and running
 of MaaS API Server via Docker container with the use of Packer.
 
 [Packer](https://packer.io/) is a utility to streamline creation and deployment of virtual
