@@ -38,7 +38,6 @@ class App():
         raise Exception("Not implemented")
         cursor = self.cursor()
         
-        
         sql = """INSERT INTO plan (journey_id, geometry, timestamp)
                  VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"""
         cursor.execute(sql, (plan['journey_id'], max_walk_distance,
@@ -152,7 +151,7 @@ class App():
         cursor.execute(sql)
         routes = cursor.fetchall()
         if len(routes)==0:
-            return null
+            return
 
         speeds={}
         
@@ -267,7 +266,7 @@ class ServerHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
                                                                 int(query_components['after'][0]) if 'after' in query_components else "",
                                                                 int(query_components['before'][0]) if 'before' in query_components else ""))
             elif "/" == parsed_path.path:
-                self.send_response({"name": "MaaS API Server", "documentation": "https://github.com/okffi/sujuvuusnavigaattori-server", "version": "1.0"})
+                self.send_response_body({"name": "MaaS API Server", "documentation": "https://github.com/okffi/sujuvuusnavigaattori-server", "version": "1.0"})
             else:
                 self.send_error(404, "Not found")
         except BadRequestException as e:
@@ -276,7 +275,6 @@ class ServerHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             self.send_error(500, str(e))
         except:
             self.send_error(500)
-            raise
         return
 
     def do_POST(self):
@@ -341,10 +339,8 @@ class ServerHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
                 self.wfile.write(data)
             except Exception as e:
                 self.send_error(500, str(e))
-                raise
             except:
                 self.send_error(500)
-                raise
 
     def send_error(self, code, message=''):
         if code == 400:

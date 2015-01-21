@@ -4,6 +4,8 @@ base="ubuntu:latest"
 image="okffi/maas"
 maascmd="server/run.sh"
 
+# TODO: add persistent data container for postgres separate from the code container http://stackoverflow.com/questions/18496940/how-to-deal-with-persistent-storage-e-g-databases-in-docker
+
 usage() {
     echo "Usage: $0 {create|update|updateall|show|build|run|stop} [options]"
     echo ""
@@ -48,7 +50,7 @@ case "$1" in
 		if [ "$2" != "" ]; then
 		    port=$2
 		fi
-		docker run -w /maas -p $port:8080 "$image" $maascmd 8080
+		docker run -d -w /maas -p $port:8080 "$image" $maascmd 8080
 		rc=$?
 		;;
 	stop)

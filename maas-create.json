@@ -18,11 +18,12 @@
                 "sudo apt-get update",
                 "sudo apt-get install -y git",
                 "sudo apt-get install -y postgresql",
-                "sudo apt-get install -y postgis",
+                "sudo apt-get install -y postgis*",
                 "sudo apt-get install -y python",
                 "sudo apt-get install -y python-psycopg2",
                 "sudo mkdir /maas",
-                "sudo mkdir /maas/server"
+                "sudo mkdir /maas/server",
+                "/etc/init.d/postgresql start"
             ]
         },
         {
@@ -33,7 +34,9 @@
         {
             "type": "shell",
             "inline": [
-                "sudo chmod +x /maas/server/server2.py"
+                "sudo chmod +x /maas/server/run.sh",
+                "sudo -u postgres createdb sujuvuusnavigaattori",
+                "sudo -u postgres psql -d sujuvuusnavigaattori -a -f /maas/server/schema.sql"
             ]
         }
   ],
