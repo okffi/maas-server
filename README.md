@@ -210,15 +210,12 @@ machine images.
 
 [Docker](http://docker.io/) is a flavor of machine virtualization tools with neat features.
 
-This script allows you to:
+`maas-docker.sh` script allows you to:
 
-    a) create Docker image from official ubuntu:latest and build MaaS API Server environment inside it
-
-    b) run MaaS API API Server as a docker container
-
-    d) view running Docker containers
-
-    e) stop a running Docker container
+1. create Docker image from official ubuntu:latest and build MaaS API Server environment inside it
+2. run MaaS API API Server as a docker container
+3. view running Docker containers
+4. stop a running Docker container
 
 The script is also capable of updating the base operating system.
 
