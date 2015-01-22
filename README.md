@@ -109,11 +109,6 @@ journey_id        | string   | yes       |
 timestamp         | string   | yes       | This should be in ISO8601 format (see [toJSON()](http://www.w3schools.com/jsref/jsref_tojson.asp) method)
 latitude          | float    | yes       | Geographical latitude of a point in the travel plan closest to the user at timestamp. 
 longitude         | float    | yes       | Geographical longitude of a point in the travel plan closest to the user at timestamp.
-<!--- speed             | float    | yes       | Current velocity in meters per second.
-accuracy          | float    | no        | Accuracy of location in meters.
-altitude          | float    | no        | Height of the position above the WGS84 ellipsoid in meters.
-altitude_accuracy | float    | no        | Accuracy of altitude in meters.
-heading           | float    | no        | The direction of travel in degrees counting clockwise from true North.--->
 
 This endpoint also supports posting multiple traces as an `application/json` JSON array.
 
