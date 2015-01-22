@@ -34,11 +34,6 @@ class App():
     def __exit__(self, type, value, traceback):
         self.connection.close()
         
-    def migrateSqliteData(self):
-        
-        return
-
-        
     def savePlan(self, plan):
         cursor = self.cursor()
         if not 'journey_id' in plan or plan['journey_id'] is None or plan['journey_id'] == '':
@@ -64,12 +59,9 @@ class App():
         return plan_id
 
     def saveTraces(self, traces):
-        
         if type(traces) is not list:
             traces = [traces]
-            
         cursor = self.cursor()
-
         for trace in traces:
             if not 'journey_id' in trace or trace['journey_id'] is None or trace['journey_id'] == '':
                 raise BadRequestException('trace journey_id is missing')
@@ -83,7 +75,6 @@ class App():
                 raise BadRequestException('trace speed is missing')
             if not 'altitude' in trace or trace['altitude'] is None or trace['altitude'] == '':
                 trace['altitude']=0
-
             cursor.execute("INSERT INTO trace (geometry, journey_id, timestamp) VALUES (%s, %s, %s)", 
                            (ppygis.Point(float(trace['longitude']), float(trace['latitude']), float(trace['altitude']), srid=4326), trace['journey_id'], trace['timestamp']))
         self.connection.commit()
