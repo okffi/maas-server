@@ -89,11 +89,11 @@ A typical workflow of client application is to:
 2. Request an OTP plan
 3. Supply the plan and `journey_id` to the API server, obtaining the `plan_id`
 4. Display speed report for a plan using `plan_id`
-5. If a user confirms the journey plan, start collecting traces, otherwise go back to 2
+5. If user confirms the journey plan, start collecting traces, otherwise go back to 2
 6. Submit traces to the API server regularly
-7. If the user reaches the destination, hits the stop button, cancels the journey or does not move
-   for a significant amount of time, go back to 1.
-8. If the user just requests a new plan on the way, go back to 2.
+7. If user reaches the destination, hits the stop button, cancels the journey or does not move
+   for a significant amount of time (15+ minutes), go back to 1.
+8. If user requests a new plan on the way, go back to 2.
 
 Another common type of workflow is to diplay speed situation using geoJSON coordinates of
 a user's viewport as a `boundaries` parameter.
