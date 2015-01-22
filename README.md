@@ -95,14 +95,11 @@ A typical workflow of client application is to:
    for a significant amount of time (15+ minutes), go back to 1.
 8. If user requests a new plan on the way, go back to 2.
 
-Another common type of workflow is to diplay speed situation using geoJSON coordinates of
-a user's viewport as a `boundaries` parameter.
+Another common type of workflow is to diplay speed situation using coordinates of a user's viewport as a `boundaries` parameter.
 
 ### Plans
 
 Plans are produced by [Open Trip Planner](http://www.opentripplanner.org/) based on [Open Street Map](http://www.openstreetmap.org/) and are used to spatially describe a travel intention of a user.
-
-The `geometry` field is expected to be a LineString.
 
 Plans are used to map traces onto existing map objects (streets etc.) to correct potentially inaccurate GSM data.
 
