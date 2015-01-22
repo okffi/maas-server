@@ -33,7 +33,7 @@ Consider this plan object to be submitted:
 var obj={
         journey_id: 'abcdefghijklmnopqrstuvwxyz0123456789', 
         timestamp: (new Date()).toJSON(), 
-        coordinates: [[0, 0], [0,1], [1,1], [1,0]
+        coordinates: [[0, 0], [0,1], [1,1], [1,0]]
     };
 ```
 
@@ -114,7 +114,7 @@ Name              | Format   | Mandatory | Notes
 ----------------- | -------- | --------- | --------
 journey_id        | string   | yes       |
 coordinates       | array    | yes       | This must be a from->to ordered array of 2 or more [geoJSON-compatible coordinates](http://geojson.org/geojson-spec.html)
-timestamp         | string   | yes       | This should be in ISO8601 format (see [toJSON()](http://www.w3schools.com/jsref/jsref_tojson.asp) method)
+timestamp         | string   | yes       | This should be in ISO8601 format with time zone (see [toJSON()](http://www.w3schools.com/jsref/jsref_tojson.asp) method). Submitting time UTC time zone is strongly recommended
 
 Such request will return a unique plan id that can be used to retrieve plan details later via the following request:
 
@@ -139,7 +139,7 @@ Parameters:
 Name              | Format   | Mandatory | Notes
 ----------------- | -------- | --------- | --------
 journey_id        | string   | yes       | 
-timestamp         | string   | yes       | This should be in ISO8601 format (see [toJSON()](http://www.w3schools.com/jsref/jsref_tojson.asp) method)
+timestamp         | string   | yes       | This should be in ISO8601 format with time zone (see [toJSON()](http://www.w3schools.com/jsref/jsref_tojson.asp) method). Submitting time UTC time zone is strongly recommended.
 latitude          | float    | yes       | Geographical latitude of a point in the travel plan closest to the user at timestamp.
 longitude         | float    | yes       | Geographical longitude of a point in the travel plan closest to the user at timestamp.
 
@@ -155,13 +155,13 @@ Parameters:
 
 Name              | Format   | Mandatory | Notes
 ----------------- | -------- | --------- | --------
-plan_id           | integer  | no        |
+plan_id           | integer  | no        | Obtained in a separate POST call (see above)
 boundaries        | array    | no        | This must be an array of 2 [geoJSON-compatible coordinates](http://geojson.org/geojson-spec.html)
-after             | string   | no        | 
-before            | string   | no        |
+after             | string   | no        | This should be in ISO8601 format with time zone (see [toJSON()](http://www.w3schools.com/jsref/jsref_tojson.asp) method). Submitting time UTC time zone is strongly recommended.
+before            | string   | no        | Same as above
 
 There are optional parameters that provide for limiting aggregation and averages based on space and/or time.
-Specifically, `boundaries` is a geoJSON bounding box; `before` and `after` are timestamps to limit selection 
+Specifically, `boundaries` is used to specify spatial limit; `before` and `after` are timestamps to limit selection 
 (moments of time indicated by either of the timestamps are excluded from selection).
 
 If a `plan_id` is provided, the report will only cover areas that are part of the specified plan.
@@ -181,24 +181,24 @@ geometry          | geometry       | true      |           | POINT
 
 Plan:
 
-Name                | Type          | notnull   | PK     | notes
-------------------- | ------------- | --------- | ------ | -------
-plan_id             | BIGSERIAL     | true      | true   |
-journey_id          | TEXT          | true      |        |
-timestamp           | TIMESTAMP     | true      |        | WITH TIME ZONE
-geometry            | geometry      | true      |        | LINESTRING
+Name              | Type           | notnull   | PK        | notes
+----------------- | -------------- | --------- | --------- | -------
+plan_id           | BIGSERIAL      | true      | true      |
+journey_id        | TEXT           | true      |           |
+timestamp         | TIMESTAMP      | true      |           | WITH TIME ZONE
+geometry          | geometry       | true      |           | LINESTRING
 
 Route *:
 
-Name            | Type           | notnull   | PK       | Notes
---------------- | -------------- | --------- | -------- | -----
-route_id        | BIGSERIAL      | true      | true     |
-journey_id      | TEXT           | true      |          |
-timestamp       | TIMESTAMP      | true      |          | WITH TIMEZONE
-geometry        | geometry       | true      |          | LINESTRING
-speed           | DECIMAL(21,16) | true      |          |
-mode            | TEXT           | true      |          |
-was_on_route    | BOOLEAN        | false     |          |
+Name              | Type           | notnull   | PK        | Notes
+----------------- | -------------- | --------- | --------- | -----
+route_id          | BIGSERIAL      | true      | true      | 
+journey_id        | TEXT           | true      |           | 
+timestamp         | TIMESTAMP      | true      |           | WITH TIMEZONE
+geometry          | geometry       | true      |           | LINESTRING
+speed             | DECIMAL(21,16) | true      |           |
+mode              | TEXT           | true      |           |
+was_on_route      | BOOLEAN        | false     |           |
 
 * routes are to be obsoleted in the near future
 

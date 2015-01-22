@@ -16,6 +16,7 @@ from math import radians, cos, sin, asin, sqrt
 #from random import randint
 
 import psycopg2 as db
+import ppygis
 
 class BadRequestException(Exception):
     def __init__(self, value):
@@ -33,20 +34,27 @@ class App():
     def __exit__(self, type, value, traceback):
         self.connection.close()
         
-    def savePlans(self, plan):
+    def migrateSqliteData(self):
         
-        #return plan
-        
-        raise Exception("Not implemented")
-        
-        cursor = self.cursor()
-        
-        sql = """INSERT INTO plan (journey_id, geometry, timestamp)
-                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"""
-        cursor.execute(sql, (plan['journey_id'], max_walk_distance,
-                             min_transfer_time, walk_speed, mode, timestamp))
-        self.connection.commit()
         return
+
+        
+    def savePlan(self, plan):
+        cursor = self.cursor()
+        if not 'journey_id' in plan or plan['journey_id'] is None or plan['journey_id'] == '':
+            raise BadRequestException('plan journey_id is missing')
+        if not 'timestamp' in plan or plan['timestamp'] is None or plan['timestamp'] == '':
+            raise BadRequestException('plan timestamp is missing')
+        if not 'coordinates' in plan or type(plan['coordinates']) is not list:
+            raise BadRequestException('plan coordinates are missing')
+        linestring=[]
+        for point in plan['coordinates']:
+            linestring.append(ppygis.Point(point[1], point[0], srid=4326))
+        cursor.execute("INSERT INTO plan (geometry, journey_id, timestamp) VALUES (%s, %s, %s) RETURNING plan_id", 
+                           (ppygis.LineString(linestring, srid=4326), plan['journey_id'], plan['timestamp']))
+        plan_id = cursor.fetchone()[0]
+        self.connection.commit()
+        return plan_id
 
     def saveTraces(self, traces):
         
@@ -67,10 +75,8 @@ class App():
             if not 'speed' in trace or trace['speed'] is None or trace['speed'] == '':
                 raise BadRequestException('trace speed is missing')
 
-            sql = """INSERT INTO trace (geometry, journey_id, timestamp, speed, accuracy, altitude, altitude_accuracy, heading)
-                     VALUES (""" + "ST_GeomFromText('POINT(%.10f %.10f)', 4326)" % (float(trace['longitude']), float(trace['latitude'])) + """, %s, %s, %s, %s, %s, %s, %s)"""
-
-            cursor.execute(sql, (trace['journey_id'], trace['timestamp']))
+            cursor.execute("INSERT INTO trace (geometry, journey_id, timestamp) VALUES (%s, %s, %s)", 
+                           (ppygis.Point(float(trace['longitude']), float(trace['latitude']), srid=4326), trace['journey_id'], trace['timestamp']))
         self.connection.commit()
         return
 
@@ -195,19 +201,6 @@ class App():
                         else:
                             street_vectors.append({"geometry": {"type": "LineString", "coordinates": [point, nextpoint]}, "speed": 0})
                             print "segment missing in avgspeed cache ", point, nextpoint
-
-                            #linestring ="LINESTRING("
-                            #for k, point in enumerate(line):
-                            #    linestring+='%.10f' % float(point[0]) + " " + '%.10f' % float(point[1])
-                            #     if k < len(line)-1:
-                            #         linestring+=", "
-                            #linestring += ")"
-                            #sql="select avg(speed), ST_asGeoJSON(ST_Simplify(geometryFromText('" + linestring +"'), " + str(simplify) + ")) from route where ST_Intersects(geometry, geometryFromText('" + linestring + "', 4326))"
-                            #sql="select avg(speed) from route where ST_Intersects(geometry, geometryFromText('" + linestring + "', 4326))"
-                            #cursor.execute(sql)
-                            #result=cursor.fetchone()
-                            #avg=result[0]
-                            #geometry=result[1]
             return street_vectors
         return 
 
@@ -287,7 +280,7 @@ class ServerHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
                     raise BadRequestException('must use application/json or payload parameter to submit data')
                 data = json.loads(unicode(data['payload'][0]))
             if "/plans" == parsed_path.path:
-                self.send_response_body(App().savePlans(data))
+                self.send_response_body(App().savePlan(data))
             elif "/traces" == parsed_path.path:
                 self.send_response_body(App().saveTraces(data))
             elif "/routes" == parsed_path.path:
