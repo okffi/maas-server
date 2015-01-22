@@ -144,7 +144,7 @@ latitude          | float    | yes       | Geographical latitude of a point in t
 longitude         | float    | yes       | Geographical longitude of a point in the travel plan closest to the user at timestamp.
 altitude          | float    | no        | Geographical altitude of a point in the travel plan closest to the user at timestamp.
 
-This endpoint also supports posting multiple traces as an `application/json` JSON array.
+This endpoint also supports posting multiple traces as an array in one request.
 
 ### Reports
 
