@@ -33,9 +33,12 @@ class App():
     def __exit__(self, type, value, traceback):
         self.connection.close()
         
-    def savePlan(self, plan):
+    def savePlans(self, plan):
+        
+        #return plan
         
         raise Exception("Not implemented")
+        
         cursor = self.cursor()
         
         sql = """INSERT INTO plan (journey_id, geometry, timestamp)
@@ -67,14 +70,7 @@ class App():
             sql = """INSERT INTO trace (geometry, journey_id, timestamp, speed, accuracy, altitude, altitude_accuracy, heading)
                      VALUES (""" + "ST_GeomFromText('POINT(%.10f %.10f)', 4326)" % (float(trace['longitude']), float(trace['latitude'])) + """, %s, %s, %s, %s, %s, %s, %s)"""
 
-            cursor.execute(sql, (trace['journey_id'], 
-                                 trace['timestamp'], 
-                                 float(trace['speed']),
-                                 0 if (not 'accuracy' in trace or trace['accuracy'] is None or trace['accuracy'] == '') else float(trace['accuracy']), 
-                                 0 if (not 'altitude' in trace or trace['altitude'] is None or trace['altitude'] == '') else float(trace['altitude']), 
-                                 0 if (not 'altitude_accuracy' in trace or trace['altitude_accuracy'] is None or trace['altitude_accuracy'] == '') else float(trace['altitude_accuracy']), 
-                                 0 if (not 'heading' in trace or trace['heading'] is None or trace['heading'] == '') else float(trace['heading'])
-                                 ))
+            cursor.execute(sql, (trace['journey_id'], trace['timestamp']))
         self.connection.commit()
         return
 
@@ -282,15 +278,14 @@ class ServerHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             parsed_path = urlparse.urlparse(self.path)
             query_components = urlparse.parse_qs(parsed_path.query)
             length = int(self.headers.getheader('content-length'))
-            post = self.rfile.read(int(length))            
-            try:
+            post = self.rfile.read(int(length))
+            if self.headers.getheader('Content-type').startswith('application/json'):
                 data = json.loads(unicode(post.decode()))
-            except ValueError:
-                # dict(parse_qsl()) makes it impossible to pass arrays into methods via regular POST
-                # additional code to detect lists needs to be added for versatility
-                data = dict(urlparse.parse_qsl(post.decode()))
-            except:
-                self.send_error(500)
+            else:
+                data=urlparse.parse_qs(post.decode())
+                if 'payload' not in data:
+                    raise BadRequestException('must use application/json or payload parameter to submit data')
+                data = json.loads(unicode(data['payload'][0]))
             if "/plans" == parsed_path.path:
                 self.send_response_body(App().savePlans(data))
             elif "/traces" == parsed_path.path:
@@ -301,13 +296,10 @@ class ServerHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
                 self.send_error(404, "Not found")
         except BadRequestException as e:
             self.send_error(400, str(e))
-            raise
         except Exception as e:
             self.send_error(500, str(e))
-            raise
         except:
             self.send_error(500)
-            raise
         return
 
     def do_OPTIONS(self):
