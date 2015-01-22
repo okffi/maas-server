@@ -15,7 +15,7 @@ API client applications can serve two purposes:
 1. contribute travel data to the server 
 2. request reports to visualize travel situation
 
-API clients specifically submit a user's travel plans, travel traces and request reports.
+API clients specifically submit user's travel plans, travel traces and request reports.
 
 All communication is done in JSON, encoded as UTF-8.
 
@@ -60,7 +60,7 @@ $.ajax({
 .done(...)
 ```
 
-### Status handling
+### Status and error handling
 
 The server suports [CORS](http://en.wikipedia.org/wiki/Cross-origin_resource_sharing).
 
@@ -68,17 +68,11 @@ Successful responses with payload generate status code 200.
 
 Empty responses generate status code 204.
 
-Bad requeste generate status code 400.
+Bad requests generate status code 400.
 
 Server errors generate status code 500.
 
-### Posting data
-
-Data posted to the API server may come in either regular `application/x-www-form-urlencoded` format or as a JSON object with `application/json` content type.
-Please note that posting arrays (i.e. multiple traces) is only supported in JSON mode.
-
-Requests are accepted only if every part of the data is correct, i.e. if one array element is missing a mandatory field, 
-all request data will be rejected.
+Requests are rejected entirely even if of data elements is missing a mandatory field.
 
 ### Journey handling
 
