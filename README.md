@@ -145,11 +145,6 @@ trace_id          | BIGSERIAL      | true      | true      |
 journey_id        | TEXT           | true      |           |
 timestamp         | TIMESTAMP      | true      |           |
 geometry          | geometry       | true      |           | POINT
-speed             | DECIMAL(21,16) | true      |           |
-accuracy          | DECIMAL(21,16) | false     |           |
-altitude          | DECIMAL(21,16) | false     |           |
-altitude_accuracy | DECIMAL(21,16) | false     |           |
-heading           | DECIMAL(21,16) | false     |           |
 
 Plan:
 
@@ -159,12 +154,6 @@ plan_id             | BIGSERIAL     | true      | true   |
 journey_id          | TEXT          | true      |        |
 timestamp           | TIMESTAMP     | true      |        | WITH TIME ZONE
 geometry            | geometry      | true      |        | LINESTRING
-<!---
-mode                | varchar       | false     |        |
-max_walk_distance   | int4          | false     |        |
-min_transfer_time   | float         | false     |        |
-walk_speed          | float         | false     |        |
---->
 
 Route *:
 
