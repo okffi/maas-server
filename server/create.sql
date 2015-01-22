@@ -21,9 +21,9 @@ CREATE TABLE IF NOT EXISTS route (
     "was_on_route"      BOOLEAN 
 );
 
-SELECT AddGeometryColumn('trace', 'geometry', 4326, 'POINT', 2);
-SELECT AddGeometryColumn('plan', 'geometry', 4326, 'LINESTRING', 2);
-SELECT AddGeometryColumn('route', 'geometry', 4326, 'LINESTRING', 2);
+SELECT AddGeometryColumn('trace', 'geometry', 4326, 'POINT', 3);
+SELECT AddGeometryColumn('plan', 'geometry', 4326, 'LINESTRING', 3);
+SELECT AddGeometryColumn('route', 'geometry', 4326, 'LINESTRING', 3);
 CREATE INDEX trace_geometry_gix ON trace USING GIST (geometry);
 CREATE INDEX plan_geometry_gix ON plan USING GIST (geometry);
 CREATE INDEX route_geometry_gix ON route USING GIST (geometry);

@@ -49,7 +49,14 @@ class App():
             raise BadRequestException('plan coordinates are missing')
         linestring=[]
         for point in plan['coordinates']:
-            linestring.append(ppygis.Point(point[1], point[0], srid=4326))
+            # as per http://geojson.org/geojson-spec.html
+            longitude=float(point[0])
+            latitude=float(point[1])
+            if len(point) > 2:
+                altitude=float(point[2])
+            else:
+                altitude=0
+            linestring.append(ppygis.Point(longitude, latitude, altitude, srid=4326))
         cursor.execute("INSERT INTO plan (geometry, journey_id, timestamp) VALUES (%s, %s, %s) RETURNING plan_id", 
                            (ppygis.LineString(linestring, srid=4326), plan['journey_id'], plan['timestamp']))
         plan_id = cursor.fetchone()[0]
@@ -74,9 +81,11 @@ class App():
                 raise BadRequestException('trace longitude is missing')
             if not 'speed' in trace or trace['speed'] is None or trace['speed'] == '':
                 raise BadRequestException('trace speed is missing')
+            if not 'altitude' in trace or trace['altitude'] is None or trace['altitude'] == '':
+                trace['altitude']=0
 
             cursor.execute("INSERT INTO trace (geometry, journey_id, timestamp) VALUES (%s, %s, %s)", 
-                           (ppygis.Point(float(trace['longitude']), float(trace['latitude']), srid=4326), trace['journey_id'], trace['timestamp']))
+                           (ppygis.Point(float(trace['longitude']), float(trace['latitude']), float(trace['altitude']), srid=4326), trace['journey_id'], trace['timestamp']))
         self.connection.commit()
         return
 

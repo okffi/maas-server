@@ -113,7 +113,7 @@ Parameters:
 Name              | Format   | Mandatory | Notes
 ----------------- | -------- | --------- | --------
 journey_id        | string   | yes       |
-coordinates       | array    | yes       | This must be a from->to ordered array of 2 or more [geoJSON-compatible coordinates](http://geojson.org/geojson-spec.html)
+coordinates       | array    | yes       | This must be a from->to ordered array of 2 or more [geoJSON-compatible coordinates](http://geojson.org/geojson-spec.html), order is longitude, latitude [, altitude]
 timestamp         | string   | yes       | This should be in ISO8601 format with time zone (see [toJSON()](http://www.w3schools.com/jsref/jsref_tojson.asp) method). Submitting time UTC time zone is strongly recommended
 
 Such request will return a unique plan id that can be used to retrieve plan details later via the following request:
@@ -142,6 +142,7 @@ journey_id        | string   | yes       |
 timestamp         | string   | yes       | This should be in ISO8601 format with time zone (see [toJSON()](http://www.w3schools.com/jsref/jsref_tojson.asp) method). Submitting time UTC time zone is strongly recommended.
 latitude          | float    | yes       | Geographical latitude of a point in the travel plan closest to the user at timestamp.
 longitude         | float    | yes       | Geographical longitude of a point in the travel plan closest to the user at timestamp.
+altitude          | float    | no        | Geographical altitude of a point in the travel plan closest to the user at timestamp.
 
 This endpoint also supports posting multiple traces as an `application/json` JSON array.
 
