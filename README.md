@@ -19,6 +19,47 @@ API clients specifically submit a user's travel plans, travel traces and request
 
 All communication is done in JSON, encoded as UTF-8.
 
+Input data should be submitted with `Content-type: application/json` header, in which case request
+body must contain a JSON object.
+
+In case `Content-type: application/json` header is not present, all data should be submitted as
+a JSON-encoded string in a `payload` parameter.
+
+#### Examples
+
+Consider this plan object to be submitted:
+
+```
+var obj={
+        journey_id: 'abcdefghijklmnopqrstuvwxyz0123456789', 
+        timestamp: (new Date()).toJSON(), 
+        coordinates: [[0, 0], [0,1], [1,1], [1,0]
+    };
+```
+
+Standard approach:
+
+```
+$.ajax({
+    url: 'http://maas.okf.fi/plans',
+    type: 'POST',
+    contentType: 'application/json',
+    data: JSON.stringify(obj)
+})
+.done(...)
+```
+
+Conservative approach:
+
+```
+$.ajax({
+    url: 'http://maas.okf.fi/plans',
+    type: 'POST',
+    data: { payload:JSON.stringify(obj) }
+})
+.done(...)
+```
+
 ### Status handling
 
 The server suports [CORS](http://en.wikipedia.org/wiki/Cross-origin_resource_sharing).
@@ -75,11 +116,11 @@ Plans are used to map traces onto existing map objects (streets etc.) to correct
 
 Parameters:
 
-name              | format   | units | mandatory | example
------------------ | -------- | ----- | --------- | --------
-journey_id        | string   |       | yes       |
-geometry          | geoJSON  |       | yes       | This should be an ordered array of coordinates (from -> to)
-timestamp         | string   |       | yes       | This should be in ISO8601 format (see [toJSON()](http://www.w3schools.com/jsref/jsref_tojson.asp) method)
+Name              | Format   | Mandatory | Notes
+----------------- | -------- | --------- | --------
+journey_id        | string   | yes       |
+coordinates       | array    | yes       | This must be a from->to ordered array of 2 or more [geoJSON-compatible coordinates](http://geojson.org/geojson-spec.html)
+timestamp         | string   | yes       | This should be in ISO8601 format (see [toJSON()](http://www.w3schools.com/jsref/jsref_tojson.asp) method)
 
 Such request will return a unique plan id that can be used to retrieve plan details later via the following request:
 
@@ -93,8 +134,6 @@ Traces are momentary snapshots of data about a moving bycicle rider as collected
 Each trace contains a single set of spatial coordinates and momentary speed as reported by the client GPS.
 The speed unit is meters per second.
 
-Data structure is based on [Leaflet API reference](http://leafletjs.com/reference.html).
-
 Traces form a very raw dataset of information about bycicle travel.
 
 `POST /traces` 
@@ -103,11 +142,11 @@ supports both single-object and array-of-objects formats.
 
 Parameters:
 
-name              | format   | mandatory | Note
+Name              | Format   | Mandatory | Notes
 ----------------- | -------- | --------- | --------
 journey_id        | string   | yes       | 
 timestamp         | string   | yes       | This should be in ISO8601 format (see [toJSON()](http://www.w3schools.com/jsref/jsref_tojson.asp) method)
-latitude          | float    | yes       | Geographical latitude of a point in the travel plan closest to the user at timestamp. 
+latitude          | float    | yes       | Geographical latitude of a point in the travel plan closest to the user at timestamp.
 longitude         | float    | yes       | Geographical longitude of a point in the travel plan closest to the user at timestamp.
 
 This endpoint also supports posting multiple traces as an `application/json` JSON array.
@@ -120,10 +159,10 @@ Reports generate aggregated data about average bycicle speeds in various spatial
 
 Parameters:
 
-name              | format   | mandatory | example
+Name              | Format   | Mandatory | Notes
 ----------------- | -------- | --------- | --------
 plan_id           | integer  | no        |
-boundaries        | geoJSON  | no        |
+boundaries        | array    | no        | This must be an array of 2 [geoJSON-compatible coordinates](http://geojson.org/geojson-spec.html)
 after             | string   | no        | 
 before            | string   | no        |
 
