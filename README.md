@@ -72,7 +72,7 @@ Bad requests generate status code 400.
 
 Server errors generate status code 500.
 
-Requests are rejected entirely even if of data elements is missing a mandatory field.
+Requests are rejected entirely even if one of data elements is missing a mandatory field.
 
 ### Journey handling
 
