@@ -36,7 +36,7 @@
             "inline": [
                 "sudo chmod +x /maas/server/run.sh",
                 "sudo -u postgres createdb sujuvuusnavigaattori",
-                "sudo -u postgres psql -d sujuvuusnavigaattori -a -f /maas/server/schema.sql"
+                "sudo -u postgres psql -d sujuvuusnavigaattori -a -f /maas/server/create.sql"
             ]
         }
   ],

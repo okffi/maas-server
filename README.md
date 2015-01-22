@@ -44,10 +44,7 @@ all request data will be rejected.
 A client is expected to generate a GUID-like unique ID that is meant to identify a user actually following a travel plan and thus
 performing a journey. This ID is called `journey_id` and has to be provided in the API calls as per documentation below.
 
-Please note the following:
-
-1. Whenever a new travel plan is accepted by the user, a new `journey_id` should be generated.
-2. Whenever a long break occurs (15+ minutes of not travelling), a client application is expected to generate a new `journey_id`.
+Please see the workflow description for working with `journey_id`.
 
 ### Workflow
 
@@ -56,11 +53,12 @@ A typical workflow of client application is to:
 1. Generate `journey_id` as a sufficiently long (30+ characters) random string
 2. Request an OTP plan
 3. Supply the plan and `journey_id` to the API server, obtaining the `plan_id`
-3. Display speed report for a plan using `plan_id`
-4. If a user confirms the journey plan, start collecting traces, otherwise go back to 2
-5. Submit traces to the API server regularly
-6. If the user reaches the destination, changes the plan half-way, cancels the journey or stops
+4. Display speed report for a plan using `plan_id`
+5. If a user confirms the journey plan, start collecting traces, otherwise go back to 2
+6. Submit traces to the API server regularly
+7. If the user reaches the destination, hits the stop button, cancels the journey or does not move
    for a significant amount of time, go back to 1.
+8. If the user just requests a new plan on the way, go back to 2.
 
 Another common type of workflow is to diplay speed situation using geoJSON coordinates of
 a user's viewport as a `boundaries` parameter.
@@ -109,13 +107,13 @@ name              | format   | mandatory | Note
 ----------------- | -------- | --------- | --------
 journey_id        | string   | yes       | 
 timestamp         | string   | yes       | This should be in ISO8601 format (see [toJSON()](http://www.w3schools.com/jsref/jsref_tojson.asp) method)
-latitude          | float    | yes       | Detected geographical latitude of the user. 
-longitude         | float    | yes       | Detected geographical longitude of the user.
-speed             | float    | yes       | Current velocity in meters per second.
+latitude          | float    | yes       | Geographical latitude of a point in the travel plan closest to the user at timestamp. 
+longitude         | float    | yes       | Geographical longitude of a point in the travel plan closest to the user at timestamp.
+<!--- speed             | float    | yes       | Current velocity in meters per second.
 accuracy          | float    | no        | Accuracy of location in meters.
 altitude          | float    | no        | Height of the position above the WGS84 ellipsoid in meters.
 altitude_accuracy | float    | no        | Accuracy of altitude in meters.
-heading           | float    | no        | The direction of travel in degrees counting clockwise from true North.
+heading           | float    | no        | The direction of travel in degrees counting clockwise from true North.--->
 
 This endpoint also supports posting multiple traces as an `application/json` JSON array.
 

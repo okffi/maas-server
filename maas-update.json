@@ -20,7 +20,7 @@
         {
             "type": "shell",
             "inline": [
-                "sudo chmod +x /maas/server/run.sh"
+                "sudo -u postgres psql -d sujuvuusnavigaattori -a -f /maas/server/update.sql"
             ]
         }
   ],

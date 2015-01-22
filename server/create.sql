@@ -3,21 +3,14 @@ CREATE EXTENSION IF NOT EXISTS postgis;
 CREATE TABLE IF NOT EXISTS trace (
     "trace_id"           BIGSERIAL PRIMARY KEY,
     "journey_id"         TEXT NOT NULL,
-    "timestamp"          TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT current_timestamp,
-    "speed"              DECIMAL(21,16) NOT NULL DEFAULT 0,
-    "accuracy"           DECIMAL(21,16),
-    "altitude"           DECIMAL(21,16),
-    "altitude_accuracy"  DECIMAL(21,16),
-    "heading"            DECIMAL(21,16)
+    "timestamp"          TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT current_timestamp
 );
-
 
 CREATE TABLE IF NOT EXISTS plan (
     "plan_id"            BIGSERIAL PRIMARY KEY,
     "journey_id"         TEXT NOT NULL,
     "timestamp"          TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT current_timestamp    
 );
-
 
 CREATE TABLE IF NOT EXISTS route (
     "route_id"          BIGSERIAL PRIMARY KEY,
