@@ -101,7 +101,7 @@ Another common type of workflow is to diplay speed situation using coordinates o
 
 Plans are produced by [Open Trip Planner](http://www.opentripplanner.org/) based on [Open Street Map](http://www.openstreetmap.org/) and are used to spatially describe a travel intention of a user.
 
-Plans are used to map traces onto existing map objects (streets etc.) to correct potentially inaccurate GSM data.
+Plans are used to map traces onto existing map objects (streets etc.) to correct potentially inaccurate GPS data.
 
 `POST /plans`
 
