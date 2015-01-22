@@ -62,7 +62,7 @@ $.ajax({
 
 ### Status and error handling
 
-The server suports [CORS](http://en.wikipedia.org/wiki/Cross-origin_resource_sharing).
+The server supports [CORS](http://en.wikipedia.org/wiki/Cross-origin_resource_sharing).
 
 Successful responses with payload generate status code 200.
 
