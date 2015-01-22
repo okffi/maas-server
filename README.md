@@ -122,7 +122,7 @@ or to obtain a report on average speeds (see below).
 ### Traces
 
 Traces are momentary snapshots of data about a moving bycicle rider as collected from a mobile client.
-Each trace contains a single set of spatial coordinates matched (corrected) to the nearest poin in travel plan.
+Each trace contains a single set of spatial coordinates matched (corrected) to the nearest point in current travel plan.
 
 Correction should be done on the client side to increase accuracy (raw GPS is likely less accurate than travel plan),
 and add some degree of privacy.
