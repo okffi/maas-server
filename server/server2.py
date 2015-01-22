@@ -192,7 +192,7 @@ class App():
                                 line.append(nextpoint)
                                 # *3.6 is legacy, should be all m/s
                                 if len(speed):
-                                    street_vectors.append({"geometry": {"type": "LineString", "coordinates": line}, "speed": 3.6*sum(speed)/float(len(speed))})
+                                    street_vectors.append({"geometry": {"type": "LineString", "coordinates": line}, "speed": 3.6*float(sum(speed))/float(len(speed))})
                                 else:
                                     street_vectors.append({"geometry": {"type": "LineString", "coordinates": line}, "speed": 0})
                                 length=0
