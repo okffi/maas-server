@@ -23,6 +23,8 @@ class App():
         
         # traces
         
+        print "Migrating traces"
+        
         sql = "select session_id, X(geom) as longitude, Y(geom) as latitude, altitude, timestamp from Traces"
         from_cursor.execute(sql)
         traces = from_cursor.fetchall()
@@ -45,6 +47,8 @@ class App():
 
         # routes
         
+        print "Migrating routes"
+
         sql = "select session_id, X(PointN(geom, 1)) as longitude1, Y(PointN(geom, 1)) as latitude1, X(PointN(geom, 2)) as longitude2, Y(PointN(geom, 2)) as latitude2, timestamp, speed, mode from Routes"
         from_cursor.execute(sql)
         routes = from_cursor.fetchall()

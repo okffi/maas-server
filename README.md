@@ -147,6 +147,11 @@ altitude          | float    | no        | Geographical altitude of a point in t
 
 Reports generate aggregated data about average bycicle speeds in various spatial areas.
 
+Data returned is a `FeatureCollection` from [geoJSON specification](http://geojson.org/geojson-spec.html).
+
+Each feature has a `geometry` attribute, which ia a linestring, and a `speed` custom property that contains an array of average speed
+values in meter/second, matching the segments of linestring.
+
 `GET /reports/speed-averages`
 
 Parameters:
@@ -157,12 +162,16 @@ plan_id           | integer  | no        | Obtained in a separate POST call (see
 boundaries        | array    | no        | This must be an array of 2 [geoJSON-compatible coordinates](http://geojson.org/geojson-spec.html)
 after             | string   | no        | This should be in ISO8601 format with time zone (see [toJSON()](http://www.w3schools.com/jsref/jsref_tojson.asp) method). Submitting time in UTC time zone is strongly recommended.
 before            | string   | no        | Same as above
+type              | string   | no        | can be either `baseline`, `realtime` or `combined` (default: `combined`)
+
 
 There are optional parameters that provide for limiting aggregation and averages based on space and/or time.
 Specifically, `boundaries` is used to specify spatial limit; `before` and `after` are timestamps to limit selection 
 (moments of time indicated by either of the timestamps are excluded from selection).
 
 If a `plan_id` is provided, the report will only cover areas that are part of the specified plan.
+
+Baseline reports are based on carefully processed data, realtime reports are based on community data.
 
 ## Database schema
 
