@@ -149,8 +149,8 @@ Reports generate aggregated data about average bycicle speeds in various spatial
 
 Data returned is a `FeatureCollection` from [geoJSON specification](http://geojson.org/geojson-spec.html).
 
-Each feature has a `geometry` attribute, which ia a linestring, and a `speed` custom property that contains an array of average speed
-values in meter/second, matching the segments of linestring.
+Each feature has a `geometry` attribute, containing a linestring, and a `speed` custom property that contains an array of average speed
+values in meter/second, matching al of the segments in that linestring.
 
 `GET /reports/speed-averages`
 
