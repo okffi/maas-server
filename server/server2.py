@@ -152,27 +152,32 @@ class App():
 
         cursor = self.cursor()
         
-        sql = "SELECT geometry, speed_averages FROM aggregate ORDER BY timestamp DESC"
+        sql = "SELECT ST_AsGeoJSON(geometry), speed FROM report ORDER BY timestamp DESC"
 
         # add boundary and type checking 
 
         cursor.execute(sql)
-        aggregates = cursor.fetchone()
-        
-        if aggregates is None:
+        records = cursor.fetchall()
+        if records:
+            collection={
+                "type": "FeatureCollection",
+                "features": []
+            }
+            for record in records:
+                collection['features'].append({
+                    'type': 'Feature',
+                    'geometry': json.loads(record[0]),
+                    'properties': {
+                        'speed': float(record[1])
+                    }
+                })            
+            return collection
+        else:
             return self.aggregateSpeedAverages(type)
         
-        #collection= {
-        #    'type': 'Feature',
-        #    'geometry': json.loads(aggregates[0]),
-        #    'properties': {
-        #        'speed': json.loads(aggregates[1])
-        #    } 
-        #}
-
-        return 
-    
     def aggregateSpeedAverages(self, type=''):
+        
+        min_length=200 # shorter segments will be grouped 
         
         cursor = self.cursor()
 
@@ -193,7 +198,7 @@ class App():
 
         sql = """
                 SELECT 
-                    ST_AsGeoJSON((ST_Dump(ST_LineMerge(ST_Union(route.geometry)))).geom)::json->'coordinates'
+                    ST_AsGeoJSON((ST_Dump(ST_LineMerge(ST_Collect(route.geometry)))).geom)::json->'coordinates'
                 FROM 
                     (SELECT DISTINCT geometry FROM route) as route
               """
@@ -236,7 +241,8 @@ class App():
                         
                     if len(feature['properties']['speeds']):
                         if self.categorizeSpeed(speed) != self.categorizeSpeed(feature['properties']['speeds'][-1]):
-                            if sum(feature['properties']['lengths']) >= 200:
+                            # make sure that non-trailing line segments shorter than 200m are combined together
+                            if sum(feature['properties']['lengths']) >= min_length:
                                 feature['properties']['speed']=float(sum(feature['properties']['speeds']))/len(feature['properties']['speeds'])
                                 collection['features'].append(copy.deepcopy(feature))
                                 del collection['features'][-1]['properties']['speeds']
@@ -252,9 +258,6 @@ class App():
                     feature['properties']['speeds'].append(speed)                    
                     feature['properties']['lengths'].append(length)                    
                     
-                    #print self.categorizeSpeed(speed), length
-                    #feature['geometry']['coordinates'].append([linestring[i-1][0], linestring[i-1][1], linestring[i-1][2]])
-                    #feature['geometry']['coordinates'].append([linestring[i][0], linestring[i][1], linestring[i][2]])                        
                 else:
                     feature['geometry']['coordinates'].append([point[0], point[1], point[2]])
             
@@ -263,6 +266,11 @@ class App():
             del collection['features'][-1]['properties']['speeds']
             del collection['features'][-1]['properties']['lengths']
                     
+        for feature in collection['features']:
+            cursor.execute("INSERT INTO report (geometry, speed, type) VALUES (ST_GeomFromGeoJSON(%s), %s, %s)", 
+                           (json.dumps({'type': 'LineString', 'coordinates': feature['geometry']['coordinates'], 'crs': {'type':'name', 'properties': {'name': 'EPSG:4326'}}}), feature['properties']['speed'], 'combined'))
+            self.connection.commit()
+                            
         return collection        
         
     def categorizeSpeed(self, speed):

@@ -28,14 +28,14 @@ CREATE INDEX trace_geometry_gix ON trace USING GIST (geometry);
 CREATE INDEX plan_geometry_gix ON plan USING GIST (geometry);
 CREATE INDEX route_geometry_gix ON route USING GIST (geometry);
 
-CREATE TABLE IF NOT EXISTS aggregate (
-    "speed_averages"    DECIMAL(21,16)[][],    
+CREATE TABLE IF NOT EXISTS report (
+    "speed"             DECIMAL(21,16),
     "type"              TEXT,
     "timestamp"         TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT current_timestamp
 );
 
-SELECT AddGeometryColumn('aggregate', 'geometry', 4326, 'MULTILINESTRING', 3);
-CREATE INDEX aggregate_geometry_gix ON trace USING GIST (geometry);
+SELECT AddGeometryColumn('report', 'geometry', 4326, 'LINESTRING', 3);
+CREATE INDEX averages_geometry_gix ON trace USING GIST (geometry);
 
 -- CREATE OR REPLACE VIEW journey AS 
 --    SELECT  journey_id, 
