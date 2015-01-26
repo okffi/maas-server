@@ -22,12 +22,13 @@ class App():
         to_cursor = self.cursor()
         
         # traces
-        
+
         print "Migrating traces"
-        
-        sql = "select session_id, X(geom) as longitude, Y(geom) as latitude, altitude, timestamp from Traces"
-        from_cursor.execute(sql)
-        traces = from_cursor.fetchall()
+
+        traces=None
+        #sql = "select session_id, X(geom) as longitude, Y(geom) as latitude, altitude, timestamp from Traces"
+        #from_cursor.execute(sql)
+        #traces = from_cursor.fetchall()
         if traces is not None and len(traces) > 0:
             for trace in traces:
                 journey_id = trace[0]
@@ -60,7 +61,7 @@ class App():
                 longitude2 = route[3]
                 latitude2 = route[4]
                 timestamp = route[5]
-                speed = route[6]
+                speed = route[6] / 3.6
                 mode = route[7]
                 altitude = 0
                 point1 = ppygis.Point(longitude1, latitude1, altitude, srid=4326)

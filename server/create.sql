@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS route (
     "timestamp"         TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT current_timestamp,
     "speed"             DECIMAL(21,16) NOT NULL DEFAULT 0,
     "mode"              TEXT NOT NULL,
-    "was_on_route"      BOOLEAN 
+    "realtime"          BOOLEAN NOT NULL DEFAULT TRUE
 );
 
 SELECT AddGeometryColumn('trace', 'geometry', 4326, 'POINT', 3);
@@ -28,27 +28,25 @@ CREATE INDEX trace_geometry_gix ON trace USING GIST (geometry);
 CREATE INDEX plan_geometry_gix ON plan USING GIST (geometry);
 CREATE INDEX route_geometry_gix ON route USING GIST (geometry);
 
--- just ignore this for now
--- 
--- CREATE TABLE traces
---    ALTER COLUMN "speed" TYPE float8
---        USING CAST("speed" as double precision)
---    ALTER COLUMN "accuracy" TYPE float8
---        USING CAST("accuracy" as double precision)
---    ALTER COLUMN "aaccuracy" TYPE float8
---        USING CAST("aaccuracy" as double precision)
---    ALTER COLUMN "heading" TYPE float8
---        USING CAST("heading" as double precision)
---    ALTER COLUMN "altitude" TYPE float8
---        USING CAST("altitude" as double precision);
---    ALTER COLUMN "timestamp" TYPE timestamptz
---        USING to_timestamp("timestamp", 'YYYY-MM-DD"T"HH24:MI:SS.USZ') at time zone 'UTC';
---    ALTER COLUMN geometry TYPE geometry(POINT, 4326)
---        USING ST_SetSRID(geometry,4326);
+CREATE TABLE IF NOT EXISTS aggregate (
+    "speed_averages"    DECIMAL(21,16)[][],    
+    "type"              TEXT,
+    "timestamp"         TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT current_timestamp
+);
 
--- ALTER TABLE routes
---     ALTER COLUMN geometry TYPE geometry(LINESTRING, 4326) 
---        USING ST_SetSRID(geometry,4326);
+SELECT AddGeometryColumn('aggregate', 'geometry', 4326, 'MULTILINESTRING', 3);
+CREATE INDEX aggregate_geometry_gix ON trace USING GIST (geometry);
 
+-- CREATE OR REPLACE VIEW journey AS 
+--    SELECT  journey_id, 
+--            MIN(timestamp) AS start_time, 
+--            MAX(timestamp) AS end_time, 
+--            ST_LineMerge(ST_Union(geometry)) as geometry
+            -- array_agg(speed) AS speed
+--    FROM route 
+--    GROUP BY journey_id;
 
-
+-- CREATE OR REPLACE VIEW web AS 
+--    SELECT
+--        ST_LineMerge(ST_Union(geometry)) as geometry
+--    FROM route;

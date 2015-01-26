@@ -9,6 +9,7 @@ import cgi
 import urlparse
 import json
 import re
+import copy
 
 import geohash
 
@@ -27,9 +28,11 @@ class BadRequestException(Exception):
 class App():
     
     def cursor(self):
-        self.connection=db.connect("dbname=sujuvuusnavigaattori")
-        self.cursor=self.connection.cursor()
-        return self.cursor
+        if not hasattr(self, 'connection'):
+            self.connection=db.connect("dbname=sujuvuusnavigaattori")
+        if not hasattr(self, '_cursor'):
+            self._cursor=self.connection.cursor()
+        return self._cursor
     
     def __exit__(self, type, value, traceback):
         self.connection.close()
@@ -137,74 +140,133 @@ class App():
             plan=result
         return plan
 
-    def getAverageSpeedsReport(self, boundary='', planID='', after='', before=''):
+    def getAverageSpeedsReport(self, boundary='', type='', planID='', after='', before=''):
         if len(boundary):
             boundary=boundary[0].split(",")
             boundary=[float(i) for i in boundary]
         if len(boundary)!=4:
             boundary=[]
-            lengthLimit=250
-        else:
-            lengthLimit=haversine(boundary[0], boundary[1], boundary[2], boundary[3])/30
+        #   lengthLimit=250
+        # else:
+        #   lengthLimit=haversine(boundary[0], boundary[1], boundary[2], boundary[3])/30
 
         cursor = self.cursor()
-
-        sql = "select ST_asGeoJSON(geometry), avg(speed) from route group by geometry"
-        cursor.execute(sql)
-        routes = cursor.fetchall()
-        if len(routes)==0:
-            return
-
-        speeds={}
         
-        for i, route in enumerate(routes):
-            pointA=json.loads(route[0])["coordinates"][0]
-            pointB=json.loads(route[0])["coordinates"][1]
-            key=geohash.encode(pointA[0], pointA[1])+'/'+geohash.encode(pointB[0], pointB[1])
-            if key in speeds:
-                print "duplicate key. old speed: ", speeds[key], " new speed: ", route[1]
-            speeds[key]=route[1]
+        sql = "SELECT geometry, speed_averages FROM aggregate ORDER BY timestamp DESC"
 
-        sql = "select ST_asGeoJSON(ST_LineMerge(ST_Union(geometry))) from (select DISTINCT geometry from route) as r"
+        # add boundary and type checking 
 
-        if len(boundary)==4:
-            sql += " WHERE MBRContains(buildMBR(?,?,?,?), geometry)"
-            cursor.execute(sql, (boundary[0], boundary[1], boundary[2], boundary[3]))
-        else:
-            cursor.execute(sql)
-        routes = cursor.fetchone()
-        if routes[0] is not None:
-            routes=json.loads(routes[0])["coordinates"]
-            street_vectors = []
-            for i, route in enumerate(routes):
-                length=0
-                line=[]
-                speed=[]
-                for j, point in enumerate(route):
-                    if j<len(route)-1:
-                        nextpoint = route[j+1]
-                        key=geohash.encode(point[0], point[1])+'/'+geohash.encode(nextpoint[0], nextpoint[1])
-                        if key in speeds:
-                            length += self.haversine(point[0], point[1], nextpoint[0], nextpoint[1])
-                            line.append(point)
-                            speed.append(speeds[key])
-                            if length >= lengthLimit or j >= len(route)-2:
-                                line.append(nextpoint)
-                                # *3.6 is legacy, should be all m/s
-                                if len(speed):
-                                    street_vectors.append({"geometry": {"type": "LineString", "coordinates": line}, "speed": 3.6*float(sum(speed))/float(len(speed))})
-                                else:
-                                    street_vectors.append({"geometry": {"type": "LineString", "coordinates": line}, "speed": 0})
-                                length=0
-                                line=[]
-                                speed=[]
-                        else:
-                            street_vectors.append({"geometry": {"type": "LineString", "coordinates": [point, nextpoint]}, "speed": 0})
-                            print "segment missing in avgspeed cache ", point, nextpoint
-            return street_vectors
+        cursor.execute(sql)
+        aggregates = cursor.fetchone()
+        
+        if aggregates is None:
+            return self.aggregateSpeedAverages(type)
+        
+        #collection= {
+        #    'type': 'Feature',
+        #    'geometry': json.loads(aggregates[0]),
+        #    'properties': {
+        #        'speed': json.loads(aggregates[1])
+        #    } 
+        #}
+
         return 
+    
+    def aggregateSpeedAverages(self, type=''):
+        
+        cursor = self.cursor()
 
+        speeds = {}
+
+        # Build average speed cache for routes
+
+        sql = """
+                    SELECT ST_GeoHash(geometry, 30), AVG(speed) FROM route GROUP BY geometry
+              """
+
+        cursor.execute(sql)
+        
+        for record in cursor.fetchall():
+            speeds[record[0]]=float(record[1])
+            
+        # Group raw routes into linestring geometries
+
+        sql = """
+                SELECT 
+                    ST_AsGeoJSON((ST_Dump(ST_LineMerge(ST_Union(route.geometry)))).geom)::json->'coordinates'
+                FROM 
+                    (SELECT DISTINCT geometry FROM route) as route
+              """
+        
+        cursor.execute(sql)    
+        collection={
+            "type": "FeatureCollection",
+            "features": []
+        }
+        for record in cursor.fetchall():
+            linestring=json.loads(record[0])
+            feature={
+                "type": "Feature", 
+                "geometry": {
+                    "type": "LineString",
+                    "coordinates": []
+                },
+                "properties": {
+                    "speed": 0,
+                    "speeds": [],
+                    "lengths": []
+                }
+            }
+            
+            # run through each group to detect speed category change and exclude short routes
+            for i, point in enumerate(linestring):
+                # start bulding route segments upon reaching second linestring point
+                if len(feature['geometry']['coordinates'])>0: 
+                    route=[]
+                    route.append(ppygis.Point(linestring[i-1][0], linestring[i-1][1], linestring[i-1][2], srid=4326))
+                    route.append(ppygis.Point(linestring[i][0], linestring[i][1], linestring[i][2], srid=4326))
+                    route=ppygis.LineString(route, srid=4326)
+                    cursor.execute("select ST_Length(ST_Transform(%s::geometry, 2839)), ST_GeoHash(%s::geometry, 30)",  (route, route))
+                    record=cursor.fetchone()
+                    length=record[0]
+                    if record[1] in speeds:
+                        speed=speeds[record[1]]
+                    else:
+                        speed=-1
+                        
+                    if len(feature['properties']['speeds']):
+                        if self.categorizeSpeed(speed) != self.categorizeSpeed(feature['properties']['speeds'][-1]):
+                            if sum(feature['properties']['lengths']) >= 200:
+                                feature['properties']['speed']=float(sum(feature['properties']['speeds']))/len(feature['properties']['speeds'])
+                                collection['features'].append(copy.deepcopy(feature))
+                                del collection['features'][-1]['properties']['speeds']
+                                del collection['features'][-1]['properties']['lengths']
+                                # reset
+                                feature['geometry']['coordinates']=[feature['geometry']['coordinates'][-1]]
+                                feature['properties']['speed']=0
+                                feature['properties']['lengths']=[]
+                                feature['properties']['speeds']=[]                            
+                        
+                    feature['geometry']['coordinates'].append([point[0], point[1], point[2]])
+                    
+                    feature['properties']['speeds'].append(speed)                    
+                    feature['properties']['lengths'].append(length)                    
+                    
+                    #print self.categorizeSpeed(speed), length
+                    #feature['geometry']['coordinates'].append([linestring[i-1][0], linestring[i-1][1], linestring[i-1][2]])
+                    #feature['geometry']['coordinates'].append([linestring[i][0], linestring[i][1], linestring[i][2]])                        
+                else:
+                    feature['geometry']['coordinates'].append([point[0], point[1], point[2]])
+            
+            feature['properties']['speed']=float(sum(feature['properties']['speeds']))/len(feature['properties']['speeds'])
+            collection['features'].append(copy.deepcopy(feature));
+            del collection['features'][-1]['properties']['speeds']
+            del collection['features'][-1]['properties']['lengths']
+                    
+        return collection        
+        
     def categorizeSpeed(self, speed):
+        speed=speed*3.6
         if speed<=10:
             return 1
         if speed<=12:
@@ -221,25 +283,9 @@ class App():
             return 7
         if speed<=45:
             return 8
-        return 9
-
-    def haversine(self, lon1, lat1, lon2, lat2):
-        """
-        Calculate the great circle distance between two points 
-        on the earth (specified in decimal degrees)
-        """
-        # convert decimal degrees to radians 
-        lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
-
-        # haversine formula 
-        dlon = lon2 - lon1 
-        dlat = lat2 - lat1 
-        a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
-        c = 2 * asin(sqrt(a)) 
-
-        # 6372800 is the radius of the Earth
-        m = 6372800 * c
-        return m 
+        if speed>45:
+            return 9
+        return -1
 
 class ServerHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
     def do_GET(self):
@@ -262,8 +308,10 @@ class ServerHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             self.send_error(400, str(e))
         except Exception as e:
             self.send_error(500, str(e))
+            raise
         except:
             self.send_error(500)
+            raise
         return
 
     def do_POST(self):
@@ -324,8 +372,10 @@ class ServerHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
                 self.wfile.write(data)
             except Exception as e:
                 self.send_error(500, str(e))
+                raise
             except:
                 self.send_error(500)
+                raise
 
     def send_error(self, code, message=''):
         if code == 400:
@@ -342,7 +392,7 @@ class ServerHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 
 class ForkingHTTPServer(SocketServer.ForkingMixIn, BaseHTTPServer.HTTPServer):
     def finish_request(self, request, client_address):
-        request.settimeout(30)
+        request.settimeout(600)
         # "super" can not be used because BaseServer is not created from object
         BaseHTTPServer.HTTPServer.finish_request(self, request, client_address)
 
