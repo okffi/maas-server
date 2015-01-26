@@ -179,7 +179,7 @@ class App():
             if type!='realtime':
                 type='combined'
         
-        min_length=250 # shorter segments will be grouped 
+        min_length=250 # shorter segments will be grouped, and linestrings ignored
         
         cursor = self.cursor()
 
@@ -216,13 +216,15 @@ class App():
         collection=[]
         for record in cursor.fetchall():
             linestring=json.loads(record[0])
+            cursor.execute("select ST_Length(ST_Transform(ST_GeomFromGeoJSON(%s)::geometry, 2839))",  (json.dumps({'type': 'LineString', 'coordinates': linestring, 'crs': {'type':'name', 'properties': {'name': 'EPSG:4326'}}}),))
+            length=cursor.fetchone()[0]
             feature={
                 "coordinates": [],
                 "speed": 0,
+                "remaining-length": length,
                 "speeds": [],
                 "lengths": []
             }
-            
             # run through each group to detect speed category change and exclude short routes
             for i, point in enumerate(linestring):
                 # start bulding route segments upon reaching second linestring point
@@ -238,27 +240,27 @@ class App():
                         speed=speeds[record[1]]
                     else:
                         speed=-1
-                        
+
                     if len(feature['speeds']):
                         if self.categorizeSpeed(speed) != self.categorizeSpeed(feature['speeds'][-1]):
-                            # make sure that non-trailing line segments shorter than 200m are combined together
-                            if sum(feature['lengths']) >= min_length:
+                            if sum(feature['lengths']) >= min_length and feature['remaining-length'] - sum(feature['lengths'])>=min_length:
                                 feature['speed']=float(sum(feature['speeds']))/len(feature['speeds'])
                                 collection.append([copy.deepcopy(feature['coordinates']), feature['speed']])
                                 # reset
+                                feature['remaining-length']-=sum(feature['lengths'])
                                 feature['coordinates']=[feature['coordinates'][-1]]
                                 feature['speed']=0
                                 feature['lengths']=[]
-                                feature['speeds']=[]                            
-                        
+                                feature['speeds']=[]
+
                     feature['coordinates'].append([point[0], point[1], point[2]])
-                    
+
                     feature['speeds'].append(speed)                    
                     feature['lengths'].append(length)                    
-                    
+
                 else:
                     feature['coordinates'].append([point[0], point[1], point[2]])
-            
+
             feature['speed']=float(sum(feature['speeds']))/len(feature['speeds'])
             collection.append([copy.deepcopy(feature['coordinates']), feature['speed']])
                     
@@ -269,7 +271,7 @@ class App():
             collection[i][0]=json.dumps({'type': 'LineString', 'coordinates': feature[0]}) # just as the database would have returned it
             self.connection.commit()
                             
-        return collection        
+        return collection
         
     def categorizeSpeed(self, speed):
         speed=speed*3.6
