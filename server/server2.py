@@ -146,48 +146,62 @@ class App():
             boundary=[float(i) for i in boundary]
         if len(boundary)!=4:
             boundary=[]
-        #   lengthLimit=250
-        # else:
-        #   lengthLimit=haversine(boundary[0], boundary[1], boundary[2], boundary[3])/30
+        if type!='baseline':
+            if type!='realtime':
+                type='combined'
 
         cursor = self.cursor()
         
-        sql = "SELECT ST_AsGeoJSON(geometry), speed FROM report ORDER BY timestamp DESC"
+        sql = "SELECT ST_AsGeoJSON(geometry), speed FROM report WHERE type=%s AND timestamp > NOW() - INTERVAL '15 minutes' ORDER BY timestamp ASC"
 
-        # add boundary and type checking 
-
-        cursor.execute(sql)
+        cursor.execute(sql, (type,))
+        
         records = cursor.fetchall()
-        if records:
-            collection={
-                "type": "FeatureCollection",
-                "features": []
-            }
-            for record in records:
-                collection['features'].append({
-                    'type': 'Feature',
-                    'geometry': json.loads(record[0]),
-                    'properties': {
-                        'speed': float(record[1])
-                    }
-                })            
-            return collection
-        else:
-            return self.aggregateSpeedAverages(type)
+        if not len(records):
+            records=self.buildAverageSpeedsReport(type)
+            
+        collection={
+            "type": "FeatureCollection",
+            "features": []
+        }
+        for record in records:
+            collection['features'].append({
+                'type': 'Feature',
+                'geometry': json.loads(record[0]),
+                'properties': {
+                    'speed': float(record[1])
+                }
+            })            
+        return collection
         
-    def aggregateSpeedAverages(self, type=''):
+    def buildAverageSpeedsReport(self, type='realtime'):
+        if type!='baseline':
+            if type!='realtime':
+                type='combined'
         
-        min_length=200 # shorter segments will be grouped 
+        min_length=250 # shorter segments will be grouped 
         
         cursor = self.cursor()
 
         speeds = {}
+        
+        # Clean up
+
+        sql = "DELETE FROM report"
+        if type == 'realtime':
+            sql += " WHERE realtime=true"
+        elif type == 'baseline':
+            sql += " WHERE realtime=false"
+        cursor.execute(sql)
 
         # Build average speed cache for routes
-
-        sql = """
-                    SELECT ST_GeoHash(geometry, 30), AVG(speed) FROM route GROUP BY geometry
-              """
+        
+        sql = "SELECT ST_GeoHash(geometry, 30), AVG(speed) FROM route"
+        if type == 'realtime':
+            sql += " WHERE realtime=true"
+        elif type == 'baseline':
+            sql += " WHERE realtime=false"
+        sql += " GROUP BY geometry"
 
         cursor.execute(sql)
         
@@ -196,37 +210,23 @@ class App():
             
         # Group raw routes into linestring geometries
 
-        sql = """
-                SELECT 
-                    ST_AsGeoJSON((ST_Dump(ST_LineMerge(ST_Collect(route.geometry)))).geom)::json->'coordinates'
-                FROM 
-                    (SELECT DISTINCT geometry FROM route) as route
-              """
+        sql = "SELECT ST_AsGeoJSON((ST_Dump(ST_LineMerge(ST_Collect(route.geometry)))).geom)::json->'coordinates' FROM (SELECT DISTINCT geometry FROM route) AS route"
         
         cursor.execute(sql)    
-        collection={
-            "type": "FeatureCollection",
-            "features": []
-        }
+        collection=[]
         for record in cursor.fetchall():
             linestring=json.loads(record[0])
             feature={
-                "type": "Feature", 
-                "geometry": {
-                    "type": "LineString",
-                    "coordinates": []
-                },
-                "properties": {
-                    "speed": 0,
-                    "speeds": [],
-                    "lengths": []
-                }
+                "coordinates": [],
+                "speed": 0,
+                "speeds": [],
+                "lengths": []
             }
             
             # run through each group to detect speed category change and exclude short routes
             for i, point in enumerate(linestring):
                 # start bulding route segments upon reaching second linestring point
-                if len(feature['geometry']['coordinates'])>0: 
+                if len(feature['coordinates'])>0: 
                     route=[]
                     route.append(ppygis.Point(linestring[i-1][0], linestring[i-1][1], linestring[i-1][2], srid=4326))
                     route.append(ppygis.Point(linestring[i][0], linestring[i][1], linestring[i][2], srid=4326))
@@ -239,36 +239,34 @@ class App():
                     else:
                         speed=-1
                         
-                    if len(feature['properties']['speeds']):
-                        if self.categorizeSpeed(speed) != self.categorizeSpeed(feature['properties']['speeds'][-1]):
+                    if len(feature['speeds']):
+                        if self.categorizeSpeed(speed) != self.categorizeSpeed(feature['speeds'][-1]):
                             # make sure that non-trailing line segments shorter than 200m are combined together
-                            if sum(feature['properties']['lengths']) >= min_length:
-                                feature['properties']['speed']=float(sum(feature['properties']['speeds']))/len(feature['properties']['speeds'])
-                                collection['features'].append(copy.deepcopy(feature))
-                                del collection['features'][-1]['properties']['speeds']
-                                del collection['features'][-1]['properties']['lengths']
+                            if sum(feature['lengths']) >= min_length:
+                                feature['speed']=float(sum(feature['speeds']))/len(feature['speeds'])
+                                collection.append([copy.deepcopy(feature['coordinates']), feature['speed']])
                                 # reset
-                                feature['geometry']['coordinates']=[feature['geometry']['coordinates'][-1]]
-                                feature['properties']['speed']=0
-                                feature['properties']['lengths']=[]
-                                feature['properties']['speeds']=[]                            
+                                feature['coordinates']=[feature['coordinates'][-1]]
+                                feature['speed']=0
+                                feature['lengths']=[]
+                                feature['speeds']=[]                            
                         
-                    feature['geometry']['coordinates'].append([point[0], point[1], point[2]])
+                    feature['coordinates'].append([point[0], point[1], point[2]])
                     
-                    feature['properties']['speeds'].append(speed)                    
-                    feature['properties']['lengths'].append(length)                    
+                    feature['speeds'].append(speed)                    
+                    feature['lengths'].append(length)                    
                     
                 else:
-                    feature['geometry']['coordinates'].append([point[0], point[1], point[2]])
+                    feature['coordinates'].append([point[0], point[1], point[2]])
             
-            feature['properties']['speed']=float(sum(feature['properties']['speeds']))/len(feature['properties']['speeds'])
-            collection['features'].append(copy.deepcopy(feature));
-            del collection['features'][-1]['properties']['speeds']
-            del collection['features'][-1]['properties']['lengths']
+            feature['speed']=float(sum(feature['speeds']))/len(feature['speeds'])
+            collection.append([copy.deepcopy(feature['coordinates']), feature['speed']])
                     
-        for feature in collection['features']:
-            cursor.execute("INSERT INTO report (geometry, speed, type) VALUES (ST_GeomFromGeoJSON(%s), %s, %s)", 
-                           (json.dumps({'type': 'LineString', 'coordinates': feature['geometry']['coordinates'], 'crs': {'type':'name', 'properties': {'name': 'EPSG:4326'}}}), feature['properties']['speed'], 'combined'))
+        now=datetime.datetime.fromtimestamp(time.time())
+        for i, feature in enumerate(collection):            
+            cursor.execute("INSERT INTO report (geometry, speed, type, timestamp) VALUES (ST_GeomFromGeoJSON(%s), %s, %s, %s)", 
+                           (json.dumps({'type': 'LineString', 'coordinates': feature[0], 'crs': {'type':'name', 'properties': {'name': 'EPSG:4326'}}}), feature[1], type, now))
+            collection[i][0]=json.dumps({'type': 'LineString', 'coordinates': feature[0]}) # just as the database would have returned it
             self.connection.commit()
                             
         return collection        

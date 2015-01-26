@@ -25,10 +25,9 @@ class App():
 
         print "Migrating traces"
 
-        traces=None
-        #sql = "select session_id, X(geom) as longitude, Y(geom) as latitude, altitude, timestamp from Traces"
-        #from_cursor.execute(sql)
-        #traces = from_cursor.fetchall()
+        sql = "select session_id, X(geom) as longitude, Y(geom) as latitude, altitude, timestamp from Traces"
+        from_cursor.execute(sql)
+        traces = from_cursor.fetchall()
         if traces is not None and len(traces) > 0:
             for trace in traces:
                 journey_id = trace[0]
