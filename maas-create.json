@@ -21,7 +21,7 @@
                 "sudo apt-get install -y postgis*",
                 "sudo apt-get install -y python",
                 "sudo apt-get install -y python-psycopg2",
-                "sudo apt-get install -y apt-get install python-pip",
+                "sudo apt-get install -y python-pip",
                 "sudo pip install PPyGIS",
                 "sudo mkdir /maas",
                 "sudo mkdir /maas/server",
