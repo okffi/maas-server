@@ -31,6 +31,7 @@ CREATE INDEX route_geometry_gix ON route USING GIST (geometry);
 CREATE TABLE IF NOT EXISTS report (
     "speed"             DECIMAL(21,16),
     "type"              TEXT NOT NULL DEFAULT 'realtime',
+    "reading"           DECIMAL(21,16) NOT NULL DEFAULT 0,
     "timestamp"         TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT current_timestamp
 );
 

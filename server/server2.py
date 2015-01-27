@@ -152,7 +152,7 @@ class App():
 
         cursor = self.cursor()
         
-        sql = "SELECT ST_AsGeoJSON(geometry), speed FROM report WHERE type=%s AND timestamp > NOW() - INTERVAL '15 minutes' ORDER BY timestamp ASC"
+        sql = "SELECT ST_AsGeoJSON(geometry), speed, reading FROM report WHERE type=%s AND timestamp > NOW() - INTERVAL '15 minutes' ORDER BY timestamp ASC"
 
         cursor.execute(sql, (type,))
         
@@ -169,7 +169,8 @@ class App():
                 'type': 'Feature',
                 'geometry': json.loads(record[0]),
                 'properties': {
-                    'speed': float(record[1])
+                    'speed': float(record[1]),
+                    'reading': float(record[2])
                 }
             })            
         return collection
@@ -184,6 +185,7 @@ class App():
         cursor = self.cursor()
 
         speeds = {}
+        readings = {}
         
         # Clean up
 
@@ -196,21 +198,22 @@ class App():
 
         # Build average speed cache for routes
         
-        sql = "SELECT ST_GeoHash(geometry, 30), AVG(speed) FROM route"
+        sql = "SELECT ST_GeoHash(geometry, 30), AVG(speed), COUNT(*) FROM route"
         if type == 'realtime':
-            sql += " WHERE realtime=true"
+            sql += " WHERE  realtime=true"
         elif type == 'baseline':
             sql += " WHERE realtime=false"
-        sql += " GROUP BY geometry"
+        sql += " GROUP BY geometry HAVING COUNT(*) > 0"
 
         cursor.execute(sql)
         
         for record in cursor.fetchall():
             speeds[record[0]]=float(record[1])
+            readings[record[0]]=float(record[2])
             
         # Group raw routes into linestring geometries
 
-        sql = "SELECT ST_AsGeoJSON((ST_Dump(ST_LineMerge(ST_Collect(route.geometry)))).geom)::json->'coordinates' FROM (SELECT DISTINCT geometry FROM route) AS route"
+        sql = "SELECT ST_AsGeoJSON((ST_Dump(ST_LineMerge(ST_Collect(route.geometry)))).geom)::json->'coordinates' FROM (SELECT geometry FROM route GROUP BY geometry HAVING COUNT(*) > 0) AS route"
         
         cursor.execute(sql)    
         collection=[]
@@ -221,8 +224,10 @@ class App():
             feature={
                 "coordinates": [],
                 "speed": 0,
+                "reading": 0,
                 "remaining-length": length,
                 "speeds": [],
+                "readings": [],
                 "lengths": []
             }
             # run through each group to detect speed category change and exclude short routes
@@ -238,38 +243,46 @@ class App():
                     length=record[0]
                     if record[1] in speeds:
                         speed=speeds[record[1]]
+                        reading=readings[record[1]]
                     else:
+                        print "Route cache miss", record[1]
                         speed=-1
+                        reading=0
 
                     if len(feature['speeds']):
                         if self.categorizeSpeed(speed) != self.categorizeSpeed(feature['speeds'][-1]):
-                            if sum(feature['lengths']) >= min_length and feature['remaining-length'] - sum(feature['lengths'])>=min_length:
+                            if (sum(feature['lengths']) >= min_length and feature['remaining-length'] - sum(feature['lengths'])>=min_length) or (self.categorizeSpeed(speed)==1):
                                 feature['speed']=float(sum(feature['speeds']))/len(feature['speeds'])
-                                collection.append([copy.deepcopy(feature['coordinates']), feature['speed']])
+                                feature['reading']=float(sum(feature['readings']))/len(feature['readings'])
+                                collection.append([copy.deepcopy(feature['coordinates']), feature['speed'], feature['reading']])
                                 # reset
                                 feature['remaining-length']-=sum(feature['lengths'])
                                 feature['coordinates']=[feature['coordinates'][-1]]
                                 feature['speed']=0
+                                feature['reading']=0
                                 feature['lengths']=[]
                                 feature['speeds']=[]
+                                feature['readings']=[]
 
                     feature['coordinates'].append([point[0], point[1], point[2]])
 
                     feature['speeds'].append(speed)                    
+                    feature['readings'].append(reading)                    
                     feature['lengths'].append(length)                    
 
                 else:
                     feature['coordinates'].append([point[0], point[1], point[2]])
 
             feature['speed']=float(sum(feature['speeds']))/len(feature['speeds'])
-            collection.append([copy.deepcopy(feature['coordinates']), feature['speed']])
+            feature['reading']=float(sum(feature['readings']))/len(feature['readings'])
+            collection.append([copy.deepcopy(feature['coordinates']), feature['speed'], feature['reading']])
                     
         now=datetime.datetime.fromtimestamp(time.time())
         for i, feature in enumerate(collection):            
-            cursor.execute("INSERT INTO report (geometry, speed, type, timestamp) VALUES (ST_GeomFromGeoJSON(%s), %s, %s, %s)", 
-                           (json.dumps({'type': 'LineString', 'coordinates': feature[0], 'crs': {'type':'name', 'properties': {'name': 'EPSG:4326'}}}), feature[1], type, now))
+            #cursor.execute("INSERT INTO report (geometry, speed, reading, type, timestamp) VALUES (ST_GeomFromGeoJSON(%s), %s, %s, %s, %s)", 
+            #               (json.dumps({'type': 'LineString', 'coordinates': feature[0], 'crs': {'type':'name', 'properties': {'name': 'EPSG:4326'}}}), feature[1], feature[2], type, now))
             collection[i][0]=json.dumps({'type': 'LineString', 'coordinates': feature[0]}) # just as the database would have returned it
-            self.connection.commit()
+            #self.connection.commit()
                             
         return collection
         
