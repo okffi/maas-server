@@ -93,9 +93,9 @@ class App():
 
             if not 'timestamp' in route or route['timestamp'] is None or route['timestamp'] == '':
                 raise BadRequestException('route timestamp is missing')
-
-            if not 'points' in route or route['points'] is None or route['points'] == '' or type(route['points']) is not list or len(route['points'])!=2:
-                raise BadRequestException('route points are wrong, missing or incorrect length')
+        
+            if not 'coordinates' in route or type(route['coordinates']) is not list or len(route['coordinates'])!=2 or type(route['coordinates'][0]) is not list or type(route['coordinates'][1]) is not list:
+                raise BadRequestException('route point coordinates are incorrect')
 
             if not 'mode' in route or route['mode'] is None or route['mode'] == '':
                 raise BadRequestException('route mode is missing')
@@ -103,21 +103,21 @@ class App():
             if not 'speed' in route or route['speed'] is None or route['speed'] == '':
                 raise BadRequestException('route speed is missing')
                 
-            sql = """INSERT INTO route (geometry, journey_id, timestamp, speed, mode, was_on_route)
-                     VALUES (""" + "ST_GeomFromText('LINESTRING(%.10f %.10f, %.10f %.10f)', 4326)" % (float(route['points'][0][1]), 
-                               float(route['points'][0][0]),
-                               float(route['points'][1][1]),
-                               float(route['points'][1][0])
-                            ) + ", %s, %s, %s, %s, %s)"
+            sql = """INSERT INTO route (geometry, journey_id, timestamp, speed, mode, realtime)
+                     VALUES (""" + "ST_GeomFromText('LINESTRING(%.10f %.10f %.10f, %.10f %.10f %.10f)', 4326)" % (float(route['coordinates'][0][0]),
+                                                                                                                  float(route['coordinates'][0][1]), 
+                                                                                                                  float(route['coordinates'][0][2]),
+                                                                                                                  float(route['coordinates'][1][0]),
+                                                                                                                  float(route['coordinates'][1][1]),
+                                                                                                                  float(route['coordinates'][1][2])
+                                                                                                                ) + ", %s, %s, %s, %s, %s)"
             cursor.execute(sql, (route['journey_id'], 
                                  route['timestamp'], 
                                  float(route['speed']),
                                  "" if (not 'mode' in route or route['mode'] is None or route['mode'] == '') else route['mode'], 
-                                 0 if (not 'was_on_route' in route or route['was_on_route'] is None or route['was_on_route'] == '') else 1
+                                 False if (not 'realtime' in route or route['realtime'] is None or route['realtime'] == '') else True
                                  ))
             self.connection.commit()
-        # if 'trace_seq' in route:
-          # self.saveTrace(cursor, trace_seq, route['journey_id'])
         return
     
     def getPlan(self, plan_id=''):

@@ -33,7 +33,7 @@ Consider this plan object to be submitted:
 var obj={
         journey_id: 'abcdefghijklmnopqrstuvwxyz0123456789', 
         timestamp: (new Date()).toJSON(), 
-        coordinates: [[0, 0], [0,1], [1,1], [1,0]]
+        coordinates: [[0,0], [0,1], [1,1], [1,0]]
     };
 ```
 
@@ -119,13 +119,31 @@ Such request will return a unique plan id that can be used to retrieve plan deta
 
 or to obtain a report on average speeds (see below).
 
+### Routes
+
+Routes are segments (lines) in a travel plan that the traveller has just completed. A route is a just a single line with an 
+average speed (in m/s) calculated for that line.
+
+Routes form a dataset for average speeds report.
+
+`POST /routes` 
+
+supports both single-object and array-of-objects formats.
+
+Parameters:
+
+Name              | Format   | Mandatory | Notes
+----------------- | -------- | --------- | --------
+journey_id        | string   | yes       | 
+timestamp         | string   | yes       | This should be in ISO8601 format with time zone (see [toJSON()](http://www.w3schools.com/jsref/jsref_tojson.asp) method). Submitting time in UTC time zone is strongly recommended.
+coordinates       | array    | yes       | This must be a from->to ordered array of exactly 2 [geoJSON-compatible coordinates](http://geojson.org/geojson-spec.html), order is longitude, latitude [, altitude]
+speed             | float    | yes       | Average speed along the route.
+mode              | string   | yes       | OTP plan mode
+
 ### Traces
 
 Traces are momentary snapshots of data about a moving bycicle rider as collected from a mobile client.
-Each trace contains a single set of spatial coordinates matched (corrected) to the nearest point in current travel plan.
-
-Correction should be done on the client side to increase accuracy (raw GPS is likely less accurate than travel plan),
-and add some degree of privacy.
+Each trace contains a single set of spatial coordinates.
 
 Traces form a very basic dataset about actual bycicle travel.
 
@@ -139,9 +157,9 @@ Name              | Format   | Mandatory | Notes
 ----------------- | -------- | --------- | --------
 journey_id        | string   | yes       | 
 timestamp         | string   | yes       | This should be in ISO8601 format with time zone (see [toJSON()](http://www.w3schools.com/jsref/jsref_tojson.asp) method). Submitting time in UTC time zone is strongly recommended.
-latitude          | float    | yes       | Geographical latitude of a point in the travel plan closest to the user at timestamp.
-longitude         | float    | yes       | Geographical longitude of a point in the travel plan closest to the user at timestamp.
-altitude          | float    | no        | Geographical altitude of a point in the travel plan closest to the user at timestamp.
+latitude          | float    | yes       | Geographical latitude of a user
+longitude         | float    | yes       | Geographical longitude of a user
+altitude          | float    | no        | Geographical altitude of a user
 
 ### Reports
 
@@ -195,19 +213,17 @@ journey_id        | TEXT           | true      |           |
 timestamp         | TIMESTAMP      | true      |           | WITH TIME ZONE
 geometry          | geometry       | true      |           | LINESTRING
 
-Route *:
+Route:
 
 Name              | Type           | notnull   | PK        | Notes
 ----------------- | -------------- | --------- | --------- | -----
 route_id          | BIGSERIAL      | true      | true      | 
 journey_id        | TEXT           | true      |           | 
 timestamp         | TIMESTAMP      | true      |           | WITH TIMEZONE
-geometry          | geometry       | true      |           | LINESTRING
+geometry          | geometry       | true      |           | LINESTRING, simple, two points
 speed             | DECIMAL(21,16) | true      |           |
-mode              | TEXT           | true      |           |
-was_on_route      | BOOLEAN        | false     |           |
-
-* routes are to be obsoleted in the near future
+mode              | TEXT           | true      |           | obtained from an OTP plan
+realtime          | BOOLEAN        | false     |           | default: true
 
 ## Server dockerization 
 
