@@ -2,7 +2,7 @@
 
 base="ubuntu:latest"
 image="okffi/maas"
-maascmd="server/run.sh"
+maascmd="run.sh"
 
 # TODO: add persistent data container for postgres separate from the code container http://stackoverflow.com/questions/18496940/how-to-deal-with-persistent-storage-e-g-databases-in-docker
 
@@ -37,7 +37,7 @@ case "$1" in
 		packer build -color=false -var "base_image=$image" -var "maas_image=$image" maas-update.json
 		;;
 	shell)
-		docker run -w /maas -it "$image" /bin/bash
+		docker run -w /maas/server -it "$image" /bin/bash
 		;;
   list|show)
 		echo "\nIMAGES:"
@@ -50,7 +50,7 @@ case "$1" in
 		if [ "$2" != "" ]; then
 		    port=$2
 		fi
-		docker run -d -w /maas -p $port:8080 "$image" $maascmd 8080
+		docker run -d -w /maas/server -p $port:8080 "$image" $maascmd 8080
 		rc=$?
 		;;
 	stop)
