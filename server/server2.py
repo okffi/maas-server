@@ -279,10 +279,10 @@ class App():
                     
         now=datetime.datetime.fromtimestamp(time.time())
         for i, feature in enumerate(collection):            
-            #cursor.execute("INSERT INTO report (geometry, speed, reading, type, timestamp) VALUES (ST_GeomFromGeoJSON(%s), %s, %s, %s, %s)", 
-            #               (json.dumps({'type': 'LineString', 'coordinates': feature[0], 'crs': {'type':'name', 'properties': {'name': 'EPSG:4326'}}}), feature[1], feature[2], type, now))
+            cursor.execute("INSERT INTO report (geometry, speed, reading, type, timestamp) VALUES (ST_GeomFromGeoJSON(%s), %s, %s, %s, %s)", 
+                           (json.dumps({'type': 'LineString', 'coordinates': feature[0], 'crs': {'type':'name', 'properties': {'name': 'EPSG:4326'}}}), feature[1], feature[2], type, now))
             collection[i][0]=json.dumps({'type': 'LineString', 'coordinates': feature[0]}) # just as the database would have returned it
-            #self.connection.commit()
+            self.connection.commit()
                             
         return collection
         
