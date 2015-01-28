@@ -20,7 +20,7 @@
                 .addTo(map);
             
                 $.ajax({
-                    url: 'http://otp.okf.fi:8080/reports/speed-averages',
+                    url: '/reports/speed-averages',
                     type: 'get'
                 })
                 .done(function(data) {
