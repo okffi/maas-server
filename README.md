@@ -8,7 +8,7 @@ See [Sujuvuusnavigaattori](https://github.com/okffi/sujuvuusnavigaattori) for fu
 
 ### Introduction
 
-API server is used to collect, process and build reports on bycicle travel data.
+API server is used to collect, process and build reports on bicycle travel data.
 
 API client applications can serve two purposes:
 
@@ -142,10 +142,10 @@ mode              | string   | yes       | OTP plan mode
 
 ### Traces
 
-Traces are momentary snapshots of data about a moving bycicle rider as collected from a mobile client.
+Traces are momentary snapshots of data about a moving bicycle rider as collected from a mobile client.
 Each trace contains a single set of spatial coordinates.
 
-Traces form a very basic dataset about actual bycicle travel.
+Traces form a very basic dataset about actual bicycle travel.
 
 `POST /traces` 
 
@@ -163,7 +163,7 @@ altitude          | float    | no        | Geographical altitude of a user
 
 ### Reports
 
-Reports generate aggregated data about average bycicle speeds in various spatial areas.
+Reports generate aggregated data about average bicycle speeds in various spatial areas.
 
 Data returned is a `FeatureCollection` from [geoJSON specification](http://geojson.org/geojson-spec.html).
 
