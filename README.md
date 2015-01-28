@@ -15,7 +15,7 @@ API client applications can serve two purposes:
 1. contribute travel data to the server 
 2. request reports to visualize travel situation
 
-API clients specifically submit user's travel plans, travel traces and request reports.
+API clients specifically submit user's travel plans, traces, routes and may request and visualize reports.
 
 All communication is done in JSON, encoded as UTF-8.
 
@@ -76,7 +76,7 @@ Requests are rejected entirely even if one of data elements is missing a mandato
 
 ### Journey handling
 
-A client is expected to generate a GUID-like unique ID that is meant to identify a user actually following a travel plan and thus
+A client is expected to generate a UUID-like unique ID that is meant to identify a user actually following a travel plan and thus
 performing a journey. This ID is called `journey_id` and has to be provided in the API calls as per documentation below.
 
 Please see the workflow description for working with `journey_id`.
@@ -89,8 +89,8 @@ A typical workflow of client application is to:
 2. Request an OTP plan
 3. Supply the plan and `journey_id` to the API server, obtaining the `plan_id`
 4. Display speed report for a plan using `plan_id`
-5. If user confirms the journey plan, start collecting traces, otherwise go back to 2
-6. Submit traces to the API server regularly
+5. If user confirms the journey plan, start collecting traces/routes, otherwise go back to 2
+6. Submit traces/routes to the API server regularly
 7. If user reaches the destination, hits the stop button, cancels the journey or does not move
    for a significant amount of time (15+ minutes), go back to 1.
 8. If user requests a new plan on the way, go back to 2.
