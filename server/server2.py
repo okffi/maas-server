@@ -323,7 +323,7 @@ class ServerHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
                                                                 int(query_components['after'][0]) if 'after' in query_components else "",
                                                                 int(query_components['before'][0]) if 'before' in query_components else ""))
             elif "/demo.html" == parsed_path.path:
-                f = open(curdir + sep + self.path) 
+                f = open(curdir + sep +'demo.html') 
                 self.send_response(200)
                 self.send_header('Content-type', 'text/html; charset=utf-8')
                 self.end_headers()                
