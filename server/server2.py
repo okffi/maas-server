@@ -14,6 +14,7 @@ import copy
 import geohash
 
 from math import radians, cos, sin, asin, sqrt
+from os import curdir, sep
 #from random import randint
 
 import psycopg2 as db
@@ -321,6 +322,13 @@ class ServerHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
                                                                 int(query_components['planID'][0]) if 'planID' in query_components else "",
                                                                 int(query_components['after'][0]) if 'after' in query_components else "",
                                                                 int(query_components['before'][0]) if 'before' in query_components else ""))
+            elif "/demo.html" == parsed_path.path:
+                f = open(curdir + sep + self.path) 
+                self.send_response(200)
+                self.send_header('Content-type', 'text/html; charset=utf-8')
+                self.end_headers()                
+                self.wfile.write(f.read())                
+                return
             elif "/" == parsed_path.path:
                 self.send_response_body({"name": "MaaS API Server", "documentation": "https://github.com/okffi/sujuvuusnavigaattori-server", "version": "1.0"})
             else:

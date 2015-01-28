@@ -97,6 +97,22 @@ A typical workflow of client application is to:
 
 Another common type of workflow is to diplay speed situation using coordinates of a user's viewport as a `boundaries` parameter.
 
+### Endpoints
+
+Below is a list of currently implementes server endpoints.
+
+URI                              | Description
+-------------------------------- | ------------------------------------------------------------------
+`GET /demo.html`                 | Open a demo page (the only non-JSON result returned by the server)
+-------------------------------- | ------------------------------------------------------------------
+`GET /reports/speed-averages`    | Obtain average speed report as a geoJSON FeatureCollection
+`GET /plans/{planID}`            | Obtain a previously saved plan as a geoJSON Feature
+-------------------------------- | ------------------------------------------------------------------
+`POST /plans`                    | Save a plan
+`POST /traces`                   | Save a trace or several traces
+`POST /routes`                   | Save a route or several routes
+
+
 ### Plans
 
 Plans are produced by [Open Trip Planner](http://www.opentripplanner.org/) based on [Open Street Map](http://www.openstreetmap.org/) and are used to spatially describe a travel intention of a user.
