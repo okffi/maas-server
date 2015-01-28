@@ -26,10 +26,6 @@
                 .done(function(data) {
                     for(var i in data) {
                         L.geoJson(data, {
-                            onEachFeature: function(f, layer) {
-                                layer.bindPopup(f['properties']['reading']);
-                                return false;
-                            },
                             style: function(f) {
                                 var colors=['#222', '#d53e4f', '#fdae61', '#fee08b', '#ffffbf', '#e6f598', '#abdda4', '#66c2a5', '#3288bd', '#5e4fa2', 'transparent'];
                                 return {
