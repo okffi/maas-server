@@ -1,59 +1,59 @@
 <!DOCTYPE html>
 <html>
-	<head>
-		<title>MAAS API Server demo page</title>
-		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-		<meta name="description" content="MAAS API Server demo" />
-		<script src="https://code.jquery.com/jquery-1.11.2.min.js"></script>
-    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
-    <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
-</head>
-	<body>
-    <script>
-        'use strict';
-        $(document)
-            .on('ready', function() {
-                var map = L.map('map').setView([60.17701223, 24.93560013], 12);
-                L.tileLayer(//'http://{s}.tile.stamen.com/toner/{z}/{x}/{y}.png'
-                            'http://a.www.toolserver.org/tiles/bw-mapnik/{z}/{x}/{y}.png',
-                            { attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors' })
-                .addTo(map);
-					
-								$.ajax({
-									url: '/reports/speed-averages',
-									type: 'get'
-                })
-                .done(function(data) {
-                    for(var i in data) {
-                        L.geoJson(data, {
-                            style: function(f) {
-                                var colors=['#222', '#d53e4f', '#fdae61', '#fee08b', '#ffffbf', '#e6f598', '#abdda4', '#66c2a5', '#3288bd', '#5e4fa2', 'transparent'];
-                                return {
-                                    color: colors[categorizeSpeed(f['properties']['speed'])],
-                                    weight: (f['properties']['reading']>2)?6:((f['properties']['reading']>1)?4:2),
-                                    opacity: (f['properties']['reading']>2)?0.7:((f['properties']['reading']>1)?0.5:0.3),
-                                }
-                            }
-                        }).addTo(map);
-                    }
-                    function categorizeSpeed(speed) {
-                        speed=speed*3.6
-                        if (speed<=10) return 1;
-                        if (speed<=12) return 2;
-                        if (speed<=15) return 3;
-                        if (speed<=20) return 4;
-                        if (speed<=25) return 5;
-                        if (speed<=30) return 6;
-                        if (speed<=35) return 7;
-                        if (speed<=45) return 8;
-                        if (speed<=70) return 9;
-                        if (speed>70) return 10;
-                        return 0;
-                    }
-                });
-            });
+    <head>
+        <title>MAAS API Server demo page</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <meta name="description" content="MAAS API Server demo" />
+        <script src="https://code.jquery.com/jquery-1.11.2.min.js"></script>
+        <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
+        <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
+    </head>
+        <body>
+            <script>
+                'use strict';
+                $(document)
+                    .on('ready', function() {
+                        var map = L.map('map').setView([60.17701223, 24.93560013], 12);
+                        L.tileLayer(//'http://{s}.tile.stamen.com/toner/{z}/{x}/{y}.png'
+                                    'http://a.www.toolserver.org/tiles/bw-mapnik/{z}/{x}/{y}.png',
+                                    { attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors' })
+                        .addTo(map);
 
-    </script>
-    <div id="map" style="position: absolute; top: 0; left: 0; right: 0;bottom:0;background: #f0f0f0"></div>
-	</body>
+                        $.ajax({
+                            url: '/reports/speed-averages',
+                            type: 'get'
+                        })
+                        .done(function(data) {
+                            for(var i in data) {
+                                L.geoJson(data, {
+                                    style: function(f) {
+                                        var colors=['#222', '#d53e4f', '#fdae61', '#fee08b', '#ffffbf', '#e6f598', '#abdda4', '#66c2a5', '#3288bd', '#5e4fa2', 'transparent'];
+                                        return {
+                                            color: colors[categorizeSpeed(f['properties']['speed'])],
+                                            weight: (f['properties']['reading']>2)?6:((f['properties']['reading']>1)?4:2),
+                                            opacity: (f['properties']['reading']>2)?0.7:((f['properties']['reading']>1)?0.5:0.3),
+                                        }
+                                    }
+                                }).addTo(map);
+                            }
+                            function categorizeSpeed(speed) {
+                                speed=speed*3.6
+                                if (speed<=10) return 1;
+                                if (speed<=12) return 2;
+                                if (speed<=15) return 3;
+                                if (speed<=20) return 4;
+                                if (speed<=25) return 5;
+                                if (speed<=30) return 6;
+                                if (speed<=35) return 7;
+                                if (speed<=45) return 8;
+                                if (speed<=70) return 9;
+                                if (speed>70) return 10;
+                                return 0;
+                            }
+                        });
+                    });
+
+            </script>
+            <div id="map" style="position: absolute; top: 0; left: 0; right: 0;bottom:0;background: #f0f0f0"></div>
+      </body>
 </html>
