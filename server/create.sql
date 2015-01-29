@@ -42,7 +42,7 @@ CREATE INDEX report_geometry_gix ON report USING GIST (geometry);
 --    SELECT  journey_id, 
 --            MIN(timestamp) AS start_time, 
 --            MAX(timestamp) AS end_time, 
---            ST_LineMerge(ST_Union(geometry)) as geometry
-            -- array_agg(speed) AS speed
+--            ST_LineMerge(ST_Collect(geometry)) as geometry
+--            array_agg(speed) AS speed
 --    FROM route 
 --    GROUP BY journey_id;
