@@ -17,7 +17,7 @@ API client applications can serve two purposes:
 
 API clients specifically submit user's travel plans, traces, routes and may request and visualize reports.
 
-All communication is done in JSON, encoded as UTF-8.
+Default format is JSON encoded as UTF-8.
 
 Input data should be submitted with `Content-type: application/json` header, in which case request
 body must contain a JSON object.
@@ -209,7 +209,7 @@ Baseline reports are based on carefully processed data, realtime reports are bas
 
 Fluency related data is stored in the following db tables (PostgreSQL/PotGIS data types):
 
-Trace:
+`trace` table:
 
 Name              | Type           | notnull   | PK        | Notes
 ----------------- | -------------- | --------- | --------- | -------
@@ -218,7 +218,7 @@ journey_id        | TEXT           | true      |           |
 timestamp         | TIMESTAMP      | true      |           |
 geometry          | geometry       | true      |           | POINT
 
-Plan:
+`plan` table:
 
 Name              | Type           | notnull   | PK        | notes
 ----------------- | -------------- | --------- | --------- | -------
@@ -227,7 +227,7 @@ journey_id        | TEXT           | true      |           |
 timestamp         | TIMESTAMP      | true      |           | WITH TIME ZONE
 geometry          | geometry       | true      |           | LINESTRING
 
-Route:
+`route` table:
 
 Name              | Type           | notnull   | PK        | Notes
 ----------------- | -------------- | --------- | --------- | -----
@@ -238,6 +238,17 @@ geometry          | geometry       | true      |           | LINESTRING, simple,
 speed             | DECIMAL(21,16) | true      |           |
 mode              | TEXT           | true      |           | obtained from an OTP plan
 realtime          | BOOLEAN        | false     |           | default: true
+
+`report` table (used as a cache for quicker delivery of report data):
+
+Name              | Type           | notnull   | PK        | Notes
+----------------- | -------------- | --------- | --------- | -----
+report_id         | BIGSERIAL      | true      | true      | 
+timestamp         | TIMESTAMP      | true      |           | WITH TIMEZONE, contains report generation time
+geometry          | geometry       | true      |           | LINESTRING
+speed             | DECIMAL(21,16) | true      |           | average speed per linestring, defaults to 0
+reading           | DECIMAL(21,16) | true      |           | average number of readings per linestring, defaults to 0
+type              | TEXT           | true      |           | either 'realtime', 'baseline' or 'combined'
 
 ## Server dockerization 
 
