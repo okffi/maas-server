@@ -11,8 +11,6 @@ import json
 import re
 import copy
 
-import geohash
-
 from math import radians, cos, sin, asin, sqrt
 from os import curdir, sep
 #from random import randint
@@ -153,7 +151,7 @@ class App():
 
         cursor = self.cursor()
         
-        sql = "SELECT ST_AsGeoJSON(geometry), speed, reading FROM report WHERE type=%s AND timestamp > NOW() - INTERVAL '15 minutes' ORDER BY timestamp ASC"
+        sql = "SELECT ST_AsGeoJSON(geometry), speed, reading FROM report WHERE type=%s AND timestamp >= (SELECT MAX(timestamp) FROM route) WHERE timestamp=MAX(timestamp) ORDER BY timestamp DESC"
 
         cursor.execute(sql, (type,))
         
