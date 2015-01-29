@@ -151,7 +151,7 @@ class App():
 
         cursor = self.cursor()
         
-        sql = "SELECT ST_AsGeoJSON(geometry), speed, reading FROM report WHERE type=%s AND timestamp >= (SELECT MAX(timestamp) FROM route) WHERE timestamp=MAX(timestamp) ORDER BY timestamp DESC"
+        sql = "SELECT ST_AsGeoJSON(geometry), speed, reading FROM report WHERE type=%s AND timestamp >= (SELECT MAX(timestamp) FROM route) AND timestamp=(SELECT MAX(timestamp) FROM report) ORDER BY timestamp DESC"
 
         cursor.execute(sql, (type,))
         

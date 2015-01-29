@@ -18,10 +18,10 @@
                             'http://a.www.toolserver.org/tiles/bw-mapnik/{z}/{x}/{y}.png',
                             { attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors' })
                 .addTo(map);
-            
-                $.ajax({
-                    url: '/reports/speed-averages',
-                    type: 'get'
+					
+								$.ajax({
+									url: '/reports/speed-averages',
+									type: 'get'
                 })
                 .done(function(data) {
                     for(var i in data) {
