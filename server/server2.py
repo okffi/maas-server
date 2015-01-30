@@ -437,7 +437,7 @@ class ServerHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             query_components = urlparse.parse_qs(parsed_path.query)
             length = int(self.headers.getheader('content-length'))
             post = self.rfile.read(int(length))
-            if self.headers.getheader('Content-type').startswith('application/json'):
+            if self.headers.getheader('Content-type') and self.headers.getheader('Content-type').startswith('application/json'):
                 data = json.loads(unicode(post.decode()))
             else:
                 data=urlparse.parse_qs(post.decode())
