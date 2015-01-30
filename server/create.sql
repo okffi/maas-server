@@ -33,7 +33,8 @@ CREATE INDEX route_journey_gix ON route (journey_id);
 CREATE INDEX route_mode_gix ON route (mode);
 
 CREATE TABLE IF NOT EXISTS report (
-    "speed"             DECIMAL(21,16),
+    "report_id"         BIGSERIAL PRIMARY KEY,
+    "speed"             DECIMAL(21,16) NOT NULL DEFAULT 0,
     "type"              TEXT NOT NULL DEFAULT 'realtime',
     "reading"           DECIMAL(21,16) NOT NULL DEFAULT 0,
     "timestamp"         TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT current_timestamp

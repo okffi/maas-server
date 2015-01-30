@@ -18,10 +18,27 @@
                                     'http://a.www.toolserver.org/tiles/bw-mapnik/{z}/{x}/{y}.png',
                                     { attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors' })
                         .addTo(map);
+                    
+                        var p=L.polygon([
+                                [60.19614356, 24.88627035],
+                                [60.21801485, 24.88627035],
+                                [60.21801485, 24.95081503],
+                                [60.19614356, 24.95081503]
+                            ], {
+                                color: '#027',
+                                weight: 0
+                            }).addTo(map);
 
                         $.ajax({
                             url: '/reports/speed-averages',
-                            type: 'get'
+                            type: 'get',
+                            contentType: 'application/json',
+                            data: {
+                                boundary_sw_lat: 60.19614356,
+                                boundary_sw_lon: 24.88627035,
+                                boundary_ne_lat: 60.21801485,
+                                boundary_ne_lon: 24.95081503,
+                            }
                         })
                         .done(function(data) {
 

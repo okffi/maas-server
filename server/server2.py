@@ -18,13 +18,16 @@ from os import curdir, sep
 import psycopg2 as db
 import ppygis
 
+from FeatureServer.Server import Server as FeatureServer
+from FeatureServer.DataSource.PostGIS import PostGIS as FeatureServerPostGIS
+
 class BadRequestException(Exception):
     def __init__(self, value):
         self.value = value
     def __str__(self):
         return self.value
 
-class App():
+class MaaS():
     
     def cursor(self):
         if not hasattr(self, 'connection'):
@@ -33,6 +36,12 @@ class App():
             self._cursor=self.connection.cursor()
         return self._cursor
     
+    def wfs(self):        
+        if not hasattr(self, '_wfs'):
+            datasource=FeatureServerPostGIS('maas', dsn='dbname=sujuvuusnavigaattori', layer='report', fid="report_id", geometry='geometry', attribute_cols='speed')
+            self._wfs=FeatureServer({'maas': datasource})
+        return self._wfs
+
     def __exit__(self, type, value, traceback):
         self.connection.close()
         
@@ -140,24 +149,48 @@ class App():
         return plan
 
     def getAverageSpeedsReport(self, boundary='', type='', planID='', after='', before=''):
-        if len(boundary):
-            boundary=boundary[0].split(",")
-            boundary=[float(i) for i in boundary]
-        if len(boundary)!=4:
-            boundary=[]
+        print boundary, len(boundary)
+
         if type!='baseline':
             if type!='realtime':
                 type='combined'
 
         cursor = self.cursor()
         
-        sql = "SELECT ST_AsGeoJSON(geometry), speed, reading FROM report WHERE type=%s AND timestamp >= (SELECT MAX(timestamp) FROM route) AND timestamp=(SELECT MAX(timestamp) FROM report) ORDER BY timestamp DESC"
-
-        cursor.execute(sql, (type,))
+        params=[type]
         
+        sql = "SELECT ST_AsGeoJSON(geometry), speed, reading FROM report WHERE type=%s" 
+
+        if len(boundary):
+            sql+=" AND (geometry && ST_Envelope('LINESTRING(%s %s 0, %s %s 0)'::geometry))"
+            params.append(float(boundary[0][0]))       
+            params.append(float(boundary[0][1]))        
+            params.append(float(boundary[1][0]))        
+            params.append(float(boundary[1][1]))
+            
+        if planID:
+            sql+=" AND (geometry && (SELECT geometry FROM plan WHERE plan_id=%s))"
+            params.append(planID)            
+
+        if before or after:
+            if before:
+                sql+=" AND (timestamp < %s)"
+                params.append(before)
+            if after:
+                sql+=" AND (timestamp > %s)"
+                params.append(after)
+        else:
+            sql+=" AND (timestamp >= (SELECT MAX(timestamp) FROM route) AND timestamp=(SELECT MAX(timestamp) FROM report))"
+        
+        sql+=" ORDER BY timestamp DESC"
+        
+        cursor.execute(sql, tuple(params)) 
         records = cursor.fetchall()
-        if not len(records):
-            records=self.buildAverageSpeedsReport(type)
+        
+        if not before and not after and not len(records):
+            self.buildAverageSpeedsReport(type)
+            cursor.execute(sql, tuple(params))
+            records = cursor.fetchall()
             
         collection={
             "type": "FeatureCollection",
@@ -179,7 +212,7 @@ class App():
             if type!='realtime':
                 type='combined'
         
-        min_length=250 # shorter segments will be grouped, and linestrings ignored
+        min_length=250 # shorter non-slow segments will be grouped together
         
         cursor = self.cursor()
 
@@ -285,6 +318,19 @@ class App():
                             
         return collection
         
+    def wfsGetCapabilities(self, base_url):                
+        data=self.wfs().dispatchRequest(path_info="/maas", params={'service': 'WFS', 'request': 'getCapabilities', 'format': 'wfs'}, base_path=base_url, request_method="GET")
+        #print repr(data.getData())
+        return data[1]
+    
+    def wfsDescribeFeatureType(self, base_url):
+        data=self.wfs().dispatchRequest(path_info="/maas", params={'service': 'WFS', 'request': 'describeFeatureType', 'format': 'wfs'}, base_path=base_url, request_method="GET")
+        return data[1]
+        
+    def wfsGetFeature(self, base_url):
+        data=self.wfs().dispatchRequest(path_info="/maas", params={'service': 'WFS', 'request': 'GetFeature', 'format': 'wfs'}, base_path=base_url, request_method="GET")
+        return data.getData()
+
     def categorizeSpeed(self, speed):
         speed=speed*3.6
         if speed<=10:
@@ -314,12 +360,17 @@ class ServerHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             query_components = urlparse.parse_qs(parsed_path.query)
             match=re.compile("/plans/(?P<planID>[0-9]+)").match(parsed_path.path)
             if match and match.group('planID'):
-                self.send_response_body(App().getPlan(int(match.group('planID'))))
+                self.send_response_body(MaaS().getPlan(int(match.group('planID'))))
             elif "/reports/speed-averages" == parsed_path.path:
-                self.send_response_body(App().getAverageSpeedsReport(query_components['boundary'][0] if 'boundary' in query_components else "",
-                                                                int(query_components['planID'][0]) if 'planID' in query_components else "",
-                                                                int(query_components['after'][0]) if 'after' in query_components else "",
-                                                                int(query_components['before'][0]) if 'before' in query_components else ""))
+                boundary=[]
+                if 'boundary_sw_lon' in query_components and 'boundary_sw_lat' in query_components and 'boundary_ne_lon' in query_components and 'boundary_ne_lat' in query_components:
+                        boundary=[[query_components['boundary_sw_lon'][0], query_components['boundary_sw_lat'][0]],[query_components['boundary_ne_lon'][0], query_components['boundary_ne_lat'][0]]]
+                    
+                self.send_response_body(MaaS().getAverageSpeedsReport(boundary,
+                                                                      query_components['type'][0]     if 'type'     in query_components else None,
+                                                                  int(query_components['planID'][0])  if 'planID'   in query_components else None,
+                                                                      query_components['after'][0]    if 'after'    in query_components else None,
+                                                                      query_components['before'][0]   if 'before'   in query_components else None))
             elif "/demo.html" == parsed_path.path:
                 f = open(curdir + sep +'demo.html') 
                 self.send_response(200)
@@ -327,6 +378,45 @@ class ServerHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
                 self.end_headers()                
                 self.wfile.write(f.read())                
                 return
+            elif "/wfs.xml" == parsed_path.path:
+                try:
+                    base_url='http://'+self.headers.getheader('Host')+'/wfs.xml'
+                    data=None
+                    if not 'REQUEST' in query_components or query_components['REQUEST'] is None or query_components['REQUEST']=='':
+                        raise BadRequestException('REQUEST parameter is required')
+                    if query_components['REQUEST'][0] == 'GetCapabilities':
+                        data=MaaS().wfsGetCapabilities(base_url)
+                    elif query_components['REQUEST'][0] == 'describeFeatureType':
+                        data=MaaS().wfsDescribeFeatureType(base_url)
+                    elif query_components['REQUEST'][0] == 'GetFeature':
+                        data=MaaS().wfsGetFeature(base_url)
+                    
+                    if data is None:
+                        self.send_response(404)
+                        self.send_header('Content-type', 'text/xml; charset=utf-8')
+                        self.end_headers()                
+                        self.wfile.write('<error>Not found</error>')
+                    else:
+                        self.send_response(200)
+                        self.send_header('Content-type', 'text/xml; charset=utf-8')
+                        self.end_headers()                
+                        self.wfile.write(data)
+                except BadRequestException as e:
+                    self.send_response(400)
+                    self.send_header('Content-type', 'text/xml; charset=utf-8')
+                    self.end_headers()                
+                    self.wfile.write('<error>' + str(e) + '</error>')
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header('Content-type', 'text/xml; charset=utf-8')
+                    self.end_headers()                
+                    self.wfile.write('<error>' + str(e) + '</error>')
+                    raise
+                except:
+                    self.send_response(500)
+                    self.send_header('Content-type', 'text/xml; charset=utf-8')
+                    self.end_headers()                
+                    
             elif "/" == parsed_path.path:
                 self.send_response_body({"name": "MaaS API Server", "documentation": "https://github.com/okffi/sujuvuusnavigaattori-server", "version": "1.0"})
             else:
@@ -355,11 +445,11 @@ class ServerHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
                     raise BadRequestException('must use application/json or payload parameter to submit data')
                 data = json.loads(unicode(data['payload'][0]))
             if "/plans" == parsed_path.path:
-                self.send_response_body(App().savePlan(data))
+                self.send_response_body(MaaS().savePlan(data))
             elif "/traces" == parsed_path.path:
-                self.send_response_body(App().saveTraces(data))
+                self.send_response_body(MaaS().saveTraces(data))
             elif "/routes" == parsed_path.path:
-                self.send_response_body(App().saveRoutes(data))
+                self.send_response_body(MaaS().saveRoutes(data))
             else:
                 self.send_error(404, "Not found")
         except BadRequestException as e:
@@ -385,7 +475,7 @@ class ServerHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             self.send_header('Content-type', 'application/json; charset=utf-8')
             self.send_header("Access-Control-Allow-Origin", "*")
         
-    def send_response_body(self, body):        
+    def send_response_body(self, body):
         if body is None or body=='':
             self.send_response(204, 'No Content')
             self.send_cors_headers()

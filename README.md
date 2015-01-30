@@ -109,7 +109,7 @@ URI                              | Description
 `POST /traces`                   | Save a trace or several traces
 `POST /routes`                   | Save a route or several routes
 `GET /demo.html`                 | Open a demo page (`Content-type: text/html`)
-`GET /wfs.xml?`                  | Provides very simple [WFS](http://www.opengeospatial.org/standards/wfs)-compatible interface to report data (`Content-type: text/xml`)
+`GET /wfs.xml?`                  | A very simple [WFS](http://www.opengeospatial.org/standards/wfs)-compatible interface to report data (`Content-type: text/xml`)
 
 ### Plans
 
@@ -188,13 +188,16 @@ values in meter/second, matching al of the segments in that linestring.
 
 Parameters:
 
-Name              | Format   | Mandatory | Notes
------------------ | -------- | --------- | --------
-plan_id           | integer  | no        | Obtained in a separate POST call (see above)
-boundaries        | array    | no        | This must be an array of 2 coordinates in [geoJSON](http://geojson.org/geojson-spec.html)-compatible coordinates format
-after             | string   | no        | This should be in ISO8601 format with time zone (see [toJSON()](http://www.w3schools.com/jsref/jsref_tojson.asp) method). Submitting time in UTC time zone is strongly recommended.
-before            | string   | no        | Same as above
-type              | string   | no        | can be either `baseline`, `realtime` or `combined` (default: `combined`)
+Name                | Format   | Mandatory | Notes
+------------------- | -------- | --------- | --------
+plan_id             | integer  | no        | Obtained in a separate POST call (see above)
+boundary_sw_lon     | float    | no        | Longitude of the south-western boundary (all four must be present)
+boundary_sw_lat     | float    | no        | Latitude of the south-western boundary
+boundary_ne_lon     | float    | no        | Longitude of the north-eastern boundary
+boundary_ne_lat     | float    | no        | Latitude of the north-eastern boundary
+after               | string   | no        | This should be in ISO8601 format with time zone (see [toJSON()](http://www.w3schools.com/jsref/jsref_tojson.asp) method). Submitting time in UTC time zone is strongly recommended.
+before              | string   | no        | Same as above
+type                | string   | no        | can be either `baseline`, `realtime` or `combined` (default: `combined`)
 
 
 There are optional parameters that provide for limiting aggregation and averages based on space and/or time.
