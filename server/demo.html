@@ -24,18 +24,18 @@
                             type: 'get'
                         })
                         .done(function(data) {
-                            for(var i in data) {
-                                L.geoJson(data, {
-                                    style: function(f) {
-                                        var colors=['#222', '#d53e4f', '#fdae61', '#fee08b', '#ffffbf', '#e6f598', '#abdda4', '#66c2a5', '#3288bd', '#5e4fa2', 'transparent'];
-                                        return {
-                                            color: colors[categorizeSpeed(f['properties']['speed'])],
-                                            weight: (f['properties']['reading']>2)?6:((f['properties']['reading']>1)?4:2),
-                                            opacity: (f['properties']['reading']>2)?0.7:((f['properties']['reading']>1)?0.5:0.3),
-                                        }
+
+                            L.geoJson(data, {
+                                style: function(f) {
+                                    var colors=['#222', '#d53e4f', '#fdae61', '#fee08b', '#ffffbf', '#e6f598', '#abdda4', '#66c2a5', '#3288bd', '#5e4fa2', 'transparent'];
+                                    return {
+                                        color: colors[categorizeSpeed(f['properties']['speed'])],
+                                        weight: (f['properties']['reading']>2)?6:((f['properties']['reading']>1)?4:2),
+                                        opacity: (f['properties']['reading']>2)?0.7:((f['properties']['reading']>1)?0.5:0.3),
                                     }
-                                }).addTo(map);
-                            }
+                                }
+                            }).addTo(map);
+
                             function categorizeSpeed(speed) {
                                 speed=speed*3.6
                                 if (speed<=10) return 1;
