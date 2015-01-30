@@ -438,12 +438,18 @@ class ServerHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             length = int(self.headers.getheader('content-length'))
             post = self.rfile.read(int(length))
             if self.headers.getheader('Content-type') and self.headers.getheader('Content-type').startswith('application/json'):
-                data = json.loads(unicode(post.decode()))
+                try:
+                    data = json.loads(unicode(post.decode()))
+                except:
+                    raise BadRequestException('data must be valid JSON')
             else:
                 data=urlparse.parse_qs(post.decode())
                 if 'payload' not in data:
                     raise BadRequestException('must use application/json or payload parameter to submit data')
-                data = json.loads(unicode(data['payload'][0]))
+                try:
+                    data = json.loads(unicode(data['payload'][0]))
+                except:
+                    raise BadRequestException('data must be valid JSON')
             if "/plans" == parsed_path.path:
                 self.send_response_body(MaaS().savePlan(data))
             elif "/traces" == parsed_path.path:
