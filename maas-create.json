@@ -22,6 +22,8 @@
                 "sudo apt-get install -y python",
                 "sudo apt-get install -y python-psycopg2",
                 "sudo apt-get install -y python-pip",
+                "sudo apt-get install python-lxml",
+                "sudo apt-get install python-shortuuid",
                 "sudo pip install PPyGIS",
                 "sudo mkdir /maas",
                 "sudo mkdir /maas/server",
