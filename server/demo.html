@@ -33,11 +33,20 @@
 
                             L.geoJson(data, {
                                 style: function(f) {
-                                    var colors=['#222', '#d53e4f', '#fdae61', '#fee08b', '#ffffbf', '#e6f598', '#abdda4', '#66c2a5', '#3288bd', '#5e4fa2', 'transparent'];
+                                    return {
+                                        color: categorizeSpeed(f['properties']['speed'])>8?'transparent':'black',
+                                        weight: 9,
+                                        opacity: 1
+                                    }
+                                }
+                            }).addTo(map);
+                            L.geoJson(data, {
+                                style: function(f) {
+                                    var colors=['#d95f02', '#d95f02', '#d95f02', '#1b9e77', '#1b9e77', '#1b9e77', '#7570b3', '#7570b3', '#7570b3', 'transparent', 'transparent'];
                                     return {
                                         color: colors[categorizeSpeed(f['properties']['speed'])],
-                                        weight: (f['properties']['reading']>2)?6:((f['properties']['reading']>1)?4:2),
-                                        opacity: (f['properties']['reading']>2)?0.7:((f['properties']['reading']>1)?0.5:0.3),
+                                        weight: 7,
+                                        opacity: 1
                                     }
                                 }
                             }).addTo(map);
