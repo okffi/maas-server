@@ -21,13 +21,7 @@
                         $.ajax({
                             url: '/reports/speed-averages',
                             type: 'get',
-                            contentType: 'application/json',
-                            data: {
-                                boundary_sw_lat: 60.01271660129151,
-                                boundary_sw_lon: 24.0655517578125,
-                                boundary_ne_lat: 60.486997991046856,
-                                boundary_ne_lon: 25.697021484375
-                            }
+                            contentType: 'application/json'
                         })
                         .done(function(data) {
 
