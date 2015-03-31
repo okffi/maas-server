@@ -87,8 +87,8 @@ A typical workflow of client application is to:
 
 1. Generate `journey_id` as a sufficiently long (30+ characters) random string
 2. Request an OTP plan
-3. Supply the plan and `journey_id` to the API server, obtaining the `plan_id`
-4. Display speed report for a plan using `plan_id`
+3. Supply the plan and `journey_id` to the API server, obtaining the `planID`
+4. Display speed report for a plan using `planID`
 5. If user confirms the journey plan, start collecting traces/routes, otherwise go back to 2
 6. Submit traces/routes to the API server regularly
 7. If user reaches the destination, hits the stop button, cancels the journey or does not move
@@ -190,7 +190,7 @@ Parameters:
 
 Name                | Format   | Mandatory | Notes
 ------------------- | -------- | --------- | --------
-plan_id             | integer  | no        | Obtained in a separate POST call (see above)
+planID              | integer  | no        | Obtained in a separate POST call (see above)
 boundary_sw_lon     | float    | no        | Longitude of the south-western boundary (all four must be present)
 boundary_sw_lat     | float    | no        | Latitude of the south-western boundary
 boundary_ne_lon     | float    | no        | Longitude of the north-eastern boundary
@@ -204,7 +204,7 @@ There are optional parameters that provide for limiting aggregation and averages
 Specifically, `boundaries` is used to specify spatial limit; `before` and `after` are timestamps to limit selection 
 (moments of time indicated by either of the timestamps are excluded from selection).
 
-If a `plan_id` is provided, the report will only cover areas that are part of the specified plan.
+If a `planID` is provided, the report will only cover areas that are part of the specified plan.
 
 Baseline reports are based on carefully processed data, realtime reports are based on community data.
 
