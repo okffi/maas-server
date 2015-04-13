@@ -82,8 +82,6 @@ class MaaS():
                 raise BadRequestException('trace latitude is missing')
             if not 'longitude' in trace or trace['longitude'] is None or trace['longitude'] == '':
                 raise BadRequestException('trace longitude is missing')
-            if not 'speed' in trace or trace['speed'] is None or trace['speed'] == '':
-                raise BadRequestException('trace speed is missing')
             if not 'altitude' in trace or trace['altitude'] is None or trace['altitude'] == '':
                 trace['altitude']=0
             cursor.execute("INSERT INTO trace (geometry, journey_id, timestamp) VALUES (%s, %s, %s)", 
