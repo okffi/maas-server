@@ -112,10 +112,10 @@ class MaaS():
             sql = """INSERT INTO route (geometry, journey_id, timestamp, speed, mode, realtime)
                      VALUES (""" + "ST_GeomFromText('LINESTRING(%.10f %.10f %.10f, %.10f %.10f %.10f)', 4326)" % (float(route['coordinates'][0][0]),
                                                                                                                   float(route['coordinates'][0][1]), 
-                                                                                                                  float(route['coordinates'][0][2]),
+                                                                                                                  float(0 if (not 2 in route['coordinates'][0]) else route['coordinates'][0][2]),
                                                                                                                   float(route['coordinates'][1][0]),
                                                                                                                   float(route['coordinates'][1][1]),
-                                                                                                                  float(route['coordinates'][1][2])
+                                                                                                                  float(0 if (not 2 in route['coordinates'][1]) else route['coordinates'][1][2])
                                                                                                                 ) + ", %s, %s, %s, %s, %s)"
             cursor.execute(sql, (route['journey_id'], 
                                  route['timestamp'], 
