@@ -4,6 +4,16 @@ OKFFI Fluency Navigator MaaS API server
 
 See [Sujuvuusnavigaattori](https://github.com/okffi/sujuvuusnavigaattori) for further info.
 
+# ERRATA
+
+If you're running into this error:
+
+```Retryable error: Error uploading script: Upload failed with non-zero exit status: 1```
+
+Then you're facing a known problem in mixing docker and packer, which exists as of June 2015, and is discussed in [packer issue #1752](https://github.com/mitchellh/packer/issues/1782).
+
+[This repository](https://github.com/stefancocora/packer-issue1752-fix) contains patched packer files that work fine with `shell` provisioning scripts.
+
 ## Server API overview
 
 ### Introduction
